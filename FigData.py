@@ -108,7 +108,7 @@ def makefig(subplots=None, plotarg=''):
         if 'GUI' in plotarg:
             plt.show()
         if 'IMAGE' in plotarg:
-            plt.savefig('plot.png')
+            plt.savefig('_plot.png')
     if 'IMAGE' in plotarg:
         showInPreview()
 
