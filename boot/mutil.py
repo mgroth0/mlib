@@ -518,7 +518,7 @@ class File(os.PathLike):
         elif self.ext == 'json':
             j = json.loads(self.read())
             if as_object:
-                import lib.figs.JsonSerializable as JsonSerializable
+                import mlib.JsonSerializable as JsonSerializable
                 return JsonSerializable.obj(j)
             else:
                 return j
@@ -528,8 +528,8 @@ class File(os.PathLike):
             err('loading does not yet support .' + self.ext + ' files')
 
     def save(self, data, silent=False):
-        import lib.figs.JsonSerializable as JsonSerializable
-        import lib.figs.FigData as FigData
+        import mlib.JsonSerializable as JsonSerializable
+        import mlib.FigData as FigData
         if isinstance(data, FigData.PlotOrSomething):
             data = JsonSerializable.FigSet(data)
         if isinstsafe(data, JsonSerializable.JsonSerializable):
