@@ -226,9 +226,9 @@ class FigData(PlotOrSomething):
             # log('plotting scatterplot')
             axis.scatter(self.x, self.y, color=self.item_colors)
         axis.set_title(self.title)
-        if isreal(self.minX):
+        if isreal(self.minX) and isreal(self.maxX):
             axis.set_xlim([self.minX, self.maxX])
-        if isreal(self.minY):
+        if isreal(self.minY) and isreal(self.maxY):
             axis.set_ylim([self.minY, self.maxY])
         axis.set_ylabel(self.y_label)
         axis.set_xlabel(self.x_label)
