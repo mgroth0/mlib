@@ -16,7 +16,6 @@ from pathlib import Path
 import traceback
 from types import SimpleNamespace
 
-
 import imageio
 
 import numpy as np
@@ -434,6 +433,9 @@ def testInPools(f, li, af,
     # TODO: add GPU parallelism
     # TODO: add Java Multithreading? (no GIL)
 
+
+
+
 class File(os.PathLike):
     def __init__(self, abspath, remote=None):
         if isinstsafe(abspath, File):
@@ -606,6 +608,8 @@ class File(os.PathLike):
         return r
 
     def __getattr__(self, item):
+        if not self.exists() or self.isdir():
+            raise AttributeError
         data = self.load(as_object=True)
         return data.__getattribute__(item)
 
@@ -696,6 +700,21 @@ class File(os.PathLike):
             path = File(head).abspath
         return list(reversed(nams))
 
+
+class Folder(File):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.exists():
+            assert self.isdir()
+    def __getitem__(self, item):
+        assert self.isdir()
+        return self.resolve(item)
+    def __setitem__(self, key, value):
+        assert self.isdir()
+        raise NotImplementedError('need have class for FileData object (not File, but FileData...)')
+    def __getattr__(self, item):
+        # undo File's override. We don't want to load from Folders
+        raise AttributeError
 
 
 
@@ -1590,3 +1609,7 @@ class SyncedDataFolder(SyncedFolder):
             WC['lastsave'] = 'mac'
         else:
             WC['lastsave'] = 'linux'
+
+def functionalize(f):
+    def ff(): return f
+    return ff
