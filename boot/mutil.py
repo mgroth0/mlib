@@ -437,7 +437,7 @@ def testInPools(f, li, af,
 
 
 class File(os.PathLike):
-    def __init__(self, abspath, remote=None, mker=False):
+    def __init__(self, abspath, remote=None, mker=False, w=None):
         if isinstsafe(abspath, File):
             self.isSSH = abspath.isSSH
             abspath = abspath.abspath
@@ -465,6 +465,9 @@ class File(os.PathLike):
         # self.isdir = os.path.isdir(self.abspath)
 
         self.mker = mker
+
+        if w is not None:
+            self.write(w)
 
     def isfile(self):
         return os.path.isfile(self.abspath)
