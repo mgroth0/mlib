@@ -5,8 +5,6 @@ import subprocess
 import sys
 from types import SimpleNamespace
 
-
-
 def gpu_stats(the_gpu_i):
     processes = subprocess.run('nvidia-smi', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if processes.returncode != 0:
@@ -68,3 +66,9 @@ def gpu_mem_str():
         r = r + ','
     r = r[0:-1]
     return r
+
+def get_available_gpus():
+    import tensorflow as tf
+    # noinspection PyUnresolvedReferences
+    local_device_protos = tf.python.client.device_lib.list_local_devices()
+    return [x.name for x in local_device_protos if x.device_type == 'GPU']
