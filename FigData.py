@@ -83,6 +83,7 @@ def makefig(subplots=None, plotarg=''):
     subplots = arr(subplots)
     rcParams['figure.figsize'] = 6, 8
     rcParams["savefig.dpi"] = 200
+
     with plt.style.context('dark_background'):
         # if len(subplots.shape) != 2:
         if len(subplots.shape) == 1:
@@ -90,8 +91,10 @@ def makefig(subplots=None, plotarg=''):
         else:
             ncol = subplots.shape[1]
         nrow = subplots.shape[0]
+
         subplots = make2d(subplots)
         fig, axs = plt.subplots(ncols=ncol, nrows=nrow)
+
         if len(axs.shape) == 1:
             # noinspection PyUnresolvedReferences
             axs.shape = (axs.shape[0], 1)
@@ -104,6 +107,7 @@ def makefig(subplots=None, plotarg=''):
         # fig.tight_layout()
         fig.tight_layout(pad=3.0)
         # fig.tight_layout(pad=10.0)
+
 
         if 'GUI' in plotarg:
             plt.show()
