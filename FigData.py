@@ -1,10 +1,10 @@
 from typing import Optional
+
 import matplotlib
 matplotlib.use('Agg')  # I think tight_layout needs this?
 # matplotlib.use('PS')  # prevents matplotlib 'app' from opening. This needs to be used before pyplot is ever imported.
 from matplotlib import pyplot as plt, rcParams
 
-from mlib.boot.mlog import log
 from mlib.boot.mutil import arr, isreal, kmscript, bitwise_and, File, log_invokation
 import numpy
 inf = numpy.inf
@@ -79,7 +79,11 @@ def Line(*args, **kwargs):
 
 import numpy as np
 @log_invokation()
-def makefig(subplots=None, plotarg=''):
+def makefig(
+        subplots=None,
+        file=None,
+        show=True
+):
     if subplots is None:
         subplots = _CurrentFigSet.viss
     ar = np.ndarray(shape=(len(subplots), len(subplots[0])), dtype=MultiPlot)
@@ -108,17 +112,13 @@ def makefig(subplots=None, plotarg=''):
                     [d.show(axs[r, c]) for d in fd]
                 else:
                     fd.show(axs[r, c])
-        # fig.tight_layout()
         fig.tight_layout(pad=3.0)
-        # fig.tight_layout(pad=10.0)
-
-
-        if 'GUI' in plotarg:
+        if not file:
             plt.show()
-        if 'IMAGE' in plotarg:
-            plt.savefig('_plot.png')
-    if 'IMAGE' in plotarg:
-        showInPreview(imageFile=File('_plot.png').abspath)
+        else:
+            plt.savefig(file)
+            if show:
+                showInPreview(imageFile=File(file).abspath)
 
 def addToCurrentFigSet(plot):
     global _CurrentFigSet
