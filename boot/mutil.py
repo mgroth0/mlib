@@ -248,6 +248,9 @@ def shorten_str(s, maxlen):
     else:
         return s[0:maxlen]
 
+from packaging import version
+def vers(s):
+    return version.parse(str(s))
 
 class SSHProcess(ShellProcess):
     def login(self):
