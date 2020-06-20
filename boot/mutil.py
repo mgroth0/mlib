@@ -33,7 +33,7 @@ from mlib.boot.mlog import log
 
 def listfiles(f): return File(f).listfiles()
 
-def name(o):
+def filename(o):
     return File(o).name
 
 class Progress:
@@ -440,7 +440,7 @@ def testInPools(f, li, af,
 
 
 class File(os.PathLike):
-    def __init__(self, abspath, remote=None):
+    def __init__(self, abspath, remote=None, mker=False, w=None):
         if isinstsafe(abspath, File):
             self.isSSH = abspath.isSSH
             abspath = abspath.abspath
@@ -466,6 +466,11 @@ class File(os.PathLike):
         # this might change so they have to be functions
         # self.isfile = os.path.isfile(self.abspath)
         # self.isdir = os.path.isdir(self.abspath)
+
+        self.mker = mker
+
+        if w is not None:
+            self.write(w)
 
     def isfile(self):
         return os.path.isfile(self.abspath)
@@ -498,14 +503,18 @@ class File(os.PathLike):
         p.close()
         return File(f'{File(dest).abspath}.zip')
 
+    def copy_into(self, dest):
+        dest = Folder(dest)
+        dest.mkdirs()
+        return self.copy_to(dest[self.name])
+
     def copy_to(self, dest):
-        import shutil
         dest = File(dest)
         dest.mkparents()
-        if dest.isdir():
-            dest = dest.resolve(self.name)
-
-        return shutil.copyfile(self, dest)
+        if self.isfile():
+            return File(shutil.copyfile(self, dest))
+        else:
+            return Folder(shutil.copytree(self, dest))
 
     def loado(self):
         return self.load(as_object=True)
@@ -556,8 +565,14 @@ class File(os.PathLike):
         else:
             err('saving does not yet support .' + self.ext + ' files')
 
+    def clear(self):
+        assert self.isdir()
+        [f.delete() for f in self.listmfiles()]
+
+
     def deleteIfExists(self):
         if self.exists(): self.delete()
+        return self
 
     def delete(self):
         # os.remove() removes a file.
@@ -571,22 +586,33 @@ class File(os.PathLike):
         else:
             os.remove(self.abspath)
 
-    def respath(self, name):
-        return self.resolve(name).abspath
+    def respath(self, nam):
+        if not isstr(nam): nam = str(nam)
+        path = self.resolve(nam).abspath
+        if self.mker and not File(path).exists() and '.' not in nam:
+            File(path).mkdir()
+        return path
 
-    def resolve(self, name):
-        return File(os.path.join(self.abspath, name))
+    def resolve(self, nam):
+        if not isstr(nam): nam = str(nam)
+        resolved = File(os.path.join(self.abspath, nam), mker=self.mker)
+        if self.mker and not resolved.exists() and '.' not in nam:
+            resolved.mkdir()
+        if resolved.exists() and resolved.isdir(): return Folder(resolved, mker=self.mker)
+        return resolved
 
     def glob(self, g):
         import glob
         matches = glob.glob(self.abspath + '/' + g)
         return [File(m) for m in matches]
 
-    def mkdirs(self):
+    def mkdirs(self, mker=False):
         mkdirs(self.abspath)
+        return Folder(self, mker=mker)
 
     def mkdir(self):
         mkdir(self.abspath)
+        return Folder(self)
 
     def touch(self):
         Path(self.abspath).touch()
@@ -594,10 +620,13 @@ class File(os.PathLike):
     def mkparents(self):
         mkdirs(self.parentDir)
 
+    def moveinto(self, new):
+        File(new).mkdirs()
+        assert File(new).isdir()
+        shutil.move(self.abspath, File(new).abspath)
+
     def moveto(self, new):
-        # if isinstsafe(new, File):
-        #     new = new.abspath
-        # os.rename(self.abspath, new)
+        assert not File(new).isdir()
         shutil.move(self.abspath, File(new).abspath)
 
     def listmfiles(self):
@@ -720,14 +749,13 @@ class Folder(File):
         raise AttributeError
 
 
-
+def pwdf(): return Folder(pwd())
 class Temp(File):
     def __enter__(self):
         return self
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.delete()
-
-
+        self.deleteIfExists()
+class TempFolder(Temp, Folder): pass
 
 
 
