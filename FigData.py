@@ -1,5 +1,6 @@
 from typing import Optional
-
+import matplotlib
+matplotlib.use('PS')  # prevents matplotlib 'app' from opening. This needs to be used before pyplot is ever imported.
 from matplotlib import pyplot as plt, rcParams
 
 from mlib.boot.mlog import log
