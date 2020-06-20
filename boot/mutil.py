@@ -5,7 +5,6 @@ from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
 import operator
 import os
-import pdb
 import pickle
 import shutil
 import sys
@@ -17,7 +16,6 @@ import traceback
 from types import SimpleNamespace
 
 import imageio
-
 import numpy as np
 import pexpect
 from pexpect import TIMEOUT
@@ -29,22 +27,20 @@ from mlib.boot import mlog
 from mlib.boot.bootutil import pwd
 from mlib.boot.mlog import log
 
-
-
 def listfiles(f): return File(f).listfiles()
 
 def filename(o):
     return File(o).name
-
+from colorama import Fore, Style
 class Progress:
     erase = '\x1b[1A\x1b[2K'
 
     _instances = []
-    def __init__(self, goal):
+    def __init__(self, goal, verb='doing', pnoun='things'):
         self.last = 0
         self.goal = goal
         self._internal_n = 1
-        log('doing $ things', goal)
+        log(f'{verb} $ {pnoun}', f'{goal:,}')
         self._instances += [self]
         self.entered = False
 
@@ -54,13 +50,15 @@ class Progress:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._instances.remove(self)
 
+    # PROG_CHAR = '|'
+    PROG_CHAR = f'{Fore.GREEN}▮{Style.RESET_ALL}'
     @staticmethod
     def prog_bar(n, d=100, BAR_LENGTH=50):
         progress = round((n / d) * 100)
         s = '['
         for x in range(BAR_LENGTH):
             if progress >= x * (100 / BAR_LENGTH):
-                s += '|'
+                s += Progress.PROG_CHAR
             else:
                 s += ' '
         s += f']'
@@ -1623,7 +1621,6 @@ ignore = Path {plot.png}
 
 class SyncedDataFolder(SyncedFolder):
     def __init__(self, mpath, lpath):
-        from syncapi import WC
         self.mpath = File(mpath).abspath
         self.lpath = File(lpath).abspath
         if ismac():
