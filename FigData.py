@@ -1,10 +1,11 @@
 from typing import Optional
 import matplotlib
-matplotlib.use('PS')  # prevents matplotlib 'app' from opening. This needs to be used before pyplot is ever imported.
+matplotlib.use('Agg')  # I think tight_layout needs this?
+# matplotlib.use('PS')  # prevents matplotlib 'app' from opening. This needs to be used before pyplot is ever imported.
 from matplotlib import pyplot as plt, rcParams
 
 from mlib.boot.mlog import log
-from mlib.boot.mutil import arr, isreal, kmscript, bitwise_and, File
+from mlib.boot.mutil import arr, isreal, kmscript, bitwise_and, File, log_invokation
 import numpy
 inf = numpy.inf
 from mlib.JsonSerializable import JsonSerializable, FigSet
@@ -76,12 +77,14 @@ class MultiPlot:
 def Line(*args, **kwargs):
     return FigData(*args, item_type='line', **kwargs)
 
-
+import numpy as np
+@log_invokation()
 def makefig(subplots=None, plotarg=''):
-    log('making figure')
     if subplots is None:
         subplots = _CurrentFigSet.viss
-    subplots = arr(subplots)
+    ar = np.ndarray(shape=(len(subplots), len(subplots[0])), dtype=MultiPlot)
+    ar[:, :] = subplots
+    subplots = ar
     rcParams['figure.figsize'] = 6, 8
     rcParams["savefig.dpi"] = 200
 
@@ -204,7 +207,12 @@ class FigData(PlotOrSomething):
 
     def fixAutoLims(self):
         if self._ylim == 'auto':
-            rel_y = arr(self.y)[bitwise_and(arr(self.x) >= self.minX, arr(self.x) < self.maxX)]
+            rel_y = arr(self.y)[
+                bitwise_and(
+                    arr(self.x) >= self.minX,
+                    arr(self.x) < self.maxX
+                )
+            ]
             dif = 0.1 * (max(rel_y) - min(rel_y))
             self.minY = min(rel_y) - dif
             self.maxY = max(rel_y) + dif
@@ -252,4 +260,4 @@ class FigData(PlotOrSomething):
                 # ,facecolor='black'
             )
 
-def showInPreview(imageFile=None): kmscript("83575D89-FCCD-4F0A-8573-752C0EFDB881",imageFile)
+def showInPreview(imageFile=None): kmscript("83575D89-FCCD-4F0A-8573-752C0EFDB881", imageFile)

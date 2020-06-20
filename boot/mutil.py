@@ -19,6 +19,7 @@ import imageio
 import numpy as np
 import pexpect
 from pexpect import TIMEOUT
+from scipy import signal
 from scipy.io import loadmat, savemat
 from scipy.signal import butter, lfilter
 import yaml
@@ -792,6 +793,16 @@ def demean(lll):
 def normalized(lll):
     return lll / np.std(lll)
 
+def nopl_high(data, Fs):
+    sig = bandstop(data, 59, 61, Fs, 1)
+    return highpass(sig, 1, Fs)
+
+def highpass(data, Hz, Fs, order=1):
+    nyq = 0.5 * Fs
+    normal_cutoff = Hz / nyq
+    b, a = signal.butter(order, normal_cutoff, btype='high', analog=False)
+    return signal.filtfilt(b, a, data)
+
 def nopl(data, Fs):
     return bandstop(data, 59, 61, Fs, 1)
 
@@ -1241,6 +1252,10 @@ def lay(a, new_layer):
         return new_layer
     else:
         return np.concatenate((a, new_layer), axis=2)
+
+def vstack(*args): return np.vstack(args)
+
+
 
 def vert(a, row):
     if len(a) == 0 or numel(a) == 0:
