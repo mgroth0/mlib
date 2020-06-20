@@ -24,11 +24,12 @@ def upload_wolf_webpage(htmlDoc, wolfFolder, permissions='Private', resource_fol
         WOLFRAM.copy_file(resource_folder, f'Resources/{wolfFolder}', permissions=permissions)
     return co[0]
 
+DOCS_FOLDER = Folder('docs')
+
 @log_invokation(with_args=True, with_result=True)
-def prep_gitlfs_webpage(htmlDoc, wolfFolder, figs_folder=None):
-    docs = Folder('docs').mkdir()
-    docs['index.html'].write(htmlDoc.getCode())
-    docs['style.css'].write(htmlDoc.stylesheet)
-    if figs_folder is not None:
-        WOLFRAM.copy_file(figs_folder, f'Resources/{wolfFolder}')
+def prep_gitlfs_webpage(htmlDoc):
+    DOCS_FOLDER.mkdir()
+    DOCS_FOLDER['index.html'].write(htmlDoc.getCode())
+    DOCS_FOLDER['style.css'].write(htmlDoc.stylesheet)
+    # "there is no step 3!"
     return shell('git remote get-url origin').readlines()
