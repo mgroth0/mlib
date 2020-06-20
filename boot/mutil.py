@@ -311,7 +311,7 @@ def log_return(as_count=False):
         return fff
     return f
 
-def log_invokation(with_class=False, with_instance=False, with_args=False):
+def log_invokation(with_class=False, with_instance=False, with_args=False, with_result=False):
     def f(ff):
         def fff(*args, **kwargs):
             ags = '' if not with_args else f'{args=}{kwargs=}'
@@ -319,9 +319,10 @@ def log_invokation(with_class=False, with_instance=False, with_args=False):
             cls = '' if not with_class else f'{cn(ags[0])}.'
             s = f'{cls}.{ff.__name__}(){inst}'
             log(f'Invoking {s}...', ref=1)
-            r = ff(*args, **kwargs)
-            log(f'Finished {s}!', ref=1)
-            return r
+            result = ff(*args, **kwargs)
+            r_str = '' if not with_result else f' ({result=})'
+            log(f'Finished {s}!{r_str}', ref=1)
+            return result
         return fff
     return f
 

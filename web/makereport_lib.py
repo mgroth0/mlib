@@ -3,7 +3,7 @@
 from wolframclient.language import wl
 
 from mlib.boot.mlog import log
-from mlib.boot.mutil import log_invokation, Temp
+from mlib.boot.mutil import log_invokation, Temp, shell, Folder
 from mlib.wolf.wolfpy import WOLFRAM
 
 def update_report(new_url, pub_url):
@@ -12,8 +12,8 @@ def update_report(new_url, pub_url):
 
 RESOURCES_ROOT = "https://www.wolframcloud.com/obj/mjgroth/Resources/"
 
-@log_invokation(with_args=True)
-def upload_webpage(htmlDoc, wolfFolder, permissions='Private', resource_folder=None, DEV=False):
+@log_invokation(with_args=True, with_result=True)
+def upload_wolf_webpage(htmlDoc, wolfFolder, permissions='Private', resource_folder=None, DEV=False):
     if DEV:
         wolfFolder = 'Dev/' + wolfFolder
     with Temp('temp.html', w=htmlDoc.getCode()) as t:
@@ -23,3 +23,12 @@ def upload_webpage(htmlDoc, wolfFolder, permissions='Private', resource_folder=N
     if resource_folder is not None:
         WOLFRAM.copy_file(resource_folder, f'Resources/{wolfFolder}', permissions=permissions)
     return co[0]
+
+@log_invokation(with_args=True, with_result=True)
+def prep_gitlfs_webpage(htmlDoc, wolfFolder, figs_folder=None):
+    docs = Folder('docs').mkdir()
+    docs['index.html'].write(htmlDoc.getCode())
+    docs['style.css'].write(htmlDoc.stylesheet)
+    if figs_folder is not None:
+        WOLFRAM.copy_file(figs_folder, f'Resources/{wolfFolder}')
+    return shell('git remote get-url origin').readlines()

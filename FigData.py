@@ -116,6 +116,7 @@ def makefig(
         if not file:
             plt.show()
         else:
+            File(file).mkparents()
             plt.savefig(file)
             if show:
                 showInPreview(imageFile=File(file).abspath)

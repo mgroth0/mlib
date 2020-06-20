@@ -1,3 +1,4 @@
+import atexit
 import logging
 from wolframclient.evaluation import WolframLanguageSession
 from wolframclient.language import wl
@@ -25,6 +26,9 @@ class WolfPy:
 
                 kernel='/home/matt/WOLFRAM/Executables/WolframKernel'
             )
+
+        # not working, need to debug
+        atexit.register(self.terminate)
 
     def __enter__(self):
         pass
@@ -89,11 +93,13 @@ class WolfPy:
             if self.eval(wl.DirectoryQ(wl.CloudObject(wl.FileNameJoin(tos)))):
                 log('cloud dir exists. deleting.')
                 self.eval(wl.DeleteDirectory(wl.CloudObject(wl.FileNameJoin(tos)), wl.Rule(wl.DeleteContents, True)))
+            log(f'copying {File(fromm)} to wlcloud...')
             return self.eval(wl.CopyDirectory(
                 File(fromm).abspath,
                 wl.CloudObject(wl.FileNameJoin(tos), wl.Rule(wl.Permissions, permissions))
             ))
         else:
+            log(f'copying {File(fromm)} to wlcloud...')
             return self.eval(wl.CopyFile(
                 File(fromm).abspath,
                 wl.CloudObject(wl.FileNameJoin(tos), wl.Rule(wl.Permissions, permissions))
