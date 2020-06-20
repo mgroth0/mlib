@@ -3,7 +3,7 @@ from typing import Optional
 from matplotlib import pyplot as plt, rcParams
 
 from mlib.boot.mlog import log
-from mlib.boot.mutil import arr, isreal, kmscript, bitwise_and
+from mlib.boot.mutil import arr, isreal, kmscript, bitwise_and, File
 import numpy
 inf = numpy.inf
 from mlib.JsonSerializable import JsonSerializable, FigSet
@@ -110,7 +110,7 @@ def makefig(subplots=None, plotarg=''):
         if 'IMAGE' in plotarg:
             plt.savefig('_plot.png')
     if 'IMAGE' in plotarg:
-        showInPreview()
+        showInPreview(imageFile=File('_plot.png').abspath)
 
 def addToCurrentFigSet(plot):
     global _CurrentFigSet
@@ -247,4 +247,4 @@ class FigData(PlotOrSomething):
                 # ,facecolor='black'
             )
 
-def showInPreview(): kmscript("83575D89-FCCD-4F0A-8573-752C0EFDB881")
+def showInPreview(imageFile=None): kmscript("83575D89-FCCD-4F0A-8573-752C0EFDB881",imageFile)

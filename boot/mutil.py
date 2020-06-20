@@ -155,9 +155,12 @@ def refreshSafariReport(): return kmscript("FF3E0AC0-67D2-4378-B65A-1EF0FB60DCE7
 def activateIdea(): return kmscript("9932B71F-CF20-45B0-AD44-CCFAC92C081C")
 def activateLast(): return kmscript("F92ADC3D-4745-40C2-843D-E62624604C66")
 
-def kmscript(id):
+def kmscript(id, param=None):
+    var = ""
+    if param is not None:
+        var = f' with parameter "{param}"'
     osascript(
-        'tell application \"Keyboard Maestro Engine\" to do script \"' + id + '\"')
+        f'tell application \"Keyboard Maestro Engine\" to do script \"{id}\"{var}')
 
 def is_non_str_itr(o):
     return isitr(o) and not isstr(o)
