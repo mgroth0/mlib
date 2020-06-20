@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from mlib.boot.mlog import log
-from mlib.boot.mutil import isstr
+from mlib.boot.mutil import isstr, log_invokation
 DARK_CSS = '''
 body {
     background:black;
@@ -47,8 +47,8 @@ class HTML:
         self.children = children
         self.stylesheet = stylesheet
         self.js = js
+    @log_invokation()
     def getCode(self):
-        log('getting HTML code for HTML doc')
         ml = '<!DOCTYPE html>'
         ml += '<html>'
         ml += '<head>'

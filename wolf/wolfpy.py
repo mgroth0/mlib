@@ -3,7 +3,7 @@ from wolframclient.evaluation import WolframLanguageSession
 from wolframclient.language import wl
 
 from mlib.boot.mlog import log
-from mlib.boot.mutil import File, strcmp, err, pwdf
+from mlib.boot.mutil import File, strcmp, err, pwdf, log_invokation
 from mlib.boot.bootutil import ismac
 
 class WolfPy:
@@ -25,6 +25,11 @@ class WolfPy:
 
                 kernel='/home/matt/WOLFRAM/Executables/WolframKernel'
             )
+
+    def __enter__(self):
+        pass
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.terminate()
 
     def terminate(self): self.session.terminate()
     def eval(self, s):
@@ -71,6 +76,7 @@ class WolfPy:
     def push_file(self, fromm):
         return self.copy_file(fromm, fromm)
 
+    @log_invokation()
     def copy_file(self, fromm, to, permissions='Private'):
         tos = File(to).names()
         flag = True
