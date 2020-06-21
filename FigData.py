@@ -120,6 +120,7 @@ def makefig(
             plt.savefig(file)
             if show:
                 showInPreview(imageFile=File(file).abspath)
+            return File(file)
 
 def addToCurrentFigSet(plot):
     global _CurrentFigSet

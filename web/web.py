@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 
-from mlib.boot.mlog import log
 from mlib.boot.mutil import isstr, log_invokation
 DARK_CSS = '''
 body {
@@ -37,16 +36,24 @@ width:100%;
 '''
 
 
-class HTML:
+class HTMLPage:
     def __init__(self,
+                 name,
                  *children,
                  # stylesheet=DARK_CSS.name,
                  stylesheet=DARK_CSS,
-                 js=''
+                 js='',
+                 subpages=(),
                  ):
+        self.name = name
         self.children = children
         self.stylesheet = stylesheet
         self.js = js
+
+    def write(self):
+        from mlib.web.makereport_lib import write_webpage
+        return write_webpage(self)
+
     @log_invokation()
     def getCode(self):
         ml = '<!DOCTYPE html>'
@@ -70,6 +77,13 @@ class HTML:
         ml += HTMLBody(*self.children).getCode()
         ml += '</html>'
         return ml
+
+def HTMLIndex(*pages):
+    [page.write() for page in pages]
+    return HTMLPage(
+        'index',
+        *[Hyperlink(page.name, f"{page.name}.html") for page in pages]
+    )
 
 class HTMLObject(ABC):
     def __init__(self, style='', clazz='', id=None):

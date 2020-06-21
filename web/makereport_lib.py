@@ -2,8 +2,9 @@
 
 from wolframclient.language import wl
 
+from mlib.boot.bootutil import pwd
 from mlib.boot.mlog import log
-from mlib.boot.mutil import log_invokation, Temp, shell, Folder, File
+from mlib.boot.mutil import log_invokation, Temp, shell, Folder, File, pwdf
 from mlib.web.web import IMAGE_ROOT_TOKEN
 from mlib.wolf.wolfpy import WOLFRAM
 
@@ -27,19 +28,29 @@ def upload_wolf_webpage(htmlDoc, wolfFolder, permissions='Private', resource_fol
 
 DOCS_FOLDER = Folder('docs')
 LOCAL_DOCS_FOLDER = Folder('_docs')
+GITHUB_LFS_IMAGE_ROOT = 'https://media.githubusercontent.com/media/mgroth0/'
 
 @log_invokation(with_args=True, with_result=True)
-def prep_webpage(htmlDoc, web_resources_root):
+def write_webpage(htmlDoc):
+    pwdname = pwdf().name
+
+    web_resources_root = f'{GITHUB_LFS_IMAGE_ROOT}{pwdname}/master/{DOCS_FOLDER.name}'
+
     DOCS_FOLDER.mkdir()
-    DOCS_FOLDER['index.html'].write(htmlDoc.getCode().replace(IMAGE_ROOT_TOKEN, web_resources_root))
-    DOCS_FOLDER['style.css'].write(htmlDoc.stylesheet)
+    page_file = DOCS_FOLDER[f'{htmlDoc.name}.html']
+    page_parent = Folder(File(page_file).parentDir)
+    page_file.write(htmlDoc.getCode().replace(IMAGE_ROOT_TOKEN, web_resources_root))
+    page_parent['style.css'].write(htmlDoc.stylesheet)
 
     LOCAL_DOCS_FOLDER.mkdir()
-    LOCAL_DOCS_FOLDER['index.html'].write(htmlDoc.getCode().replace(
+    local_page_file = LOCAL_DOCS_FOLDER[f'{htmlDoc.name}.html']
+    local_page_parent = Folder(File(local_page_file).parentDir)
+    local_page_file.write(htmlDoc.getCode().replace(
         IMAGE_ROOT_TOKEN,
         File(DOCS_FOLDER).url()
     ))
-    LOCAL_DOCS_FOLDER['style.css'].write(htmlDoc.stylesheet)
+    local_page_parent['style.css'].write(htmlDoc.stylesheet)
+    return local_page_file
 
 @log_invokation()
 def push_docs():

@@ -166,7 +166,8 @@ def logverb(fun):
 def reloadIdeaFilesFromDisk(): return kmscript("C9729AC7-D386-4225-A097-92D78AFFB3AE")
 
 @log_invokation()
-def refreshSafariReport(url):
+def openInSafari(url):
+    if isinstsafe(url, File): url = url.url()
     return kmscript(
         id="FF3E0AC0-67D2-4378-B65A-1EF0FB60DCE7",
         param=url
@@ -483,6 +484,13 @@ class File(os.PathLike):
         if w is not None:
             self.write(w)
 
+    def rel_to(self, parent):
+        parent = File(parent).abspath
+        # com = os.path.commonprefix([parent, self.abspath])
+        # assert com != '/'
+        # return os.path.relpath(self.abspath, com)
+        return os.path.relpath(self.abspath, parent)
+
     def url(self):
         return pathlib.Path(self.abspath).as_uri()
 
@@ -698,6 +706,9 @@ class File(os.PathLike):
 
     def exists(self):
         return os.path.isfile(self.abspath) or os.path.isdir(self.abspath)
+
+    def open(self):
+        return openInSafari(self)
 
     def read(self):
         with open(self.abspath, 'r') as file:
