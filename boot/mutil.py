@@ -5,6 +5,7 @@ from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
 import operator
 import os
+import pathlib
 import pickle
 import shutil
 import sys
@@ -27,6 +28,21 @@ import yaml
 from mlib.boot import mlog
 from mlib.boot.bootutil import pwd
 from mlib.boot.mlog import log
+
+def log_invokation(with_class=False, with_instance=False, with_args=False, with_result=False):
+    def f(ff):
+        def fff(*args, **kwargs):
+            ags = '' if not with_args else f'{args=}{kwargs=}'
+            inst = '' if not with_instance else f' of {args[0]}'
+            cls = '' if not with_class else f'{cn(ags[0])}.'
+            s = f'{cls}.{ff.__name__}(){inst}'
+            log(f'Invoking {s}...', ref=1)
+            result = ff(*args, **kwargs)
+            r_str = '' if not with_result else f' ({result=})'
+            log(f'Finished {s}!{r_str}', ref=1)
+            return result
+        return fff
+    return f
 
 def listfiles(f): return File(f).listfiles()
 
@@ -149,7 +165,12 @@ def logverb(fun):
 
 def reloadIdeaFilesFromDisk(): return kmscript("C9729AC7-D386-4225-A097-92D78AFFB3AE")
 
-def refreshSafariReport(): return kmscript("FF3E0AC0-67D2-4378-B65A-1EF0FB60DCE7")
+@log_invokation()
+def refreshSafariReport(url):
+    return kmscript(
+        id="FF3E0AC0-67D2-4378-B65A-1EF0FB60DCE7",
+        param=url
+    )
 
 def activateIdea(): return kmscript("9932B71F-CF20-45B0-AD44-CCFAC92C081C")
 def activateLast(): return kmscript("F92ADC3D-4745-40C2-843D-E62624604C66")
@@ -311,20 +332,7 @@ def log_return(as_count=False):
         return fff
     return f
 
-def log_invokation(with_class=False, with_instance=False, with_args=False, with_result=False):
-    def f(ff):
-        def fff(*args, **kwargs):
-            ags = '' if not with_args else f'{args=}{kwargs=}'
-            inst = '' if not with_instance else f' of {args[0]}'
-            cls = '' if not with_class else f'{cn(ags[0])}.'
-            s = f'{cls}.{ff.__name__}(){inst}'
-            log(f'Invoking {s}...', ref=1)
-            result = ff(*args, **kwargs)
-            r_str = '' if not with_result else f' ({result=})'
-            log(f'Finished {s}!{r_str}', ref=1)
-            return result
-        return fff
-    return f
+
 
 def ls(d=pwd()):
     import os
@@ -474,6 +482,9 @@ class File(os.PathLike):
 
         if w is not None:
             self.write(w)
+
+    def url(self):
+        return pathlib.Path(self.abspath).as_uri()
 
     def isfile(self):
         return os.path.isfile(self.abspath)

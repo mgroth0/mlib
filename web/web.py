@@ -273,6 +273,13 @@ class HTMLImage(HTMLChild):
     @staticmethod
     def tag(): return 'img'
     def attributes(self): return f'src="{self.url}" alt="an image" width="500"'
+IMAGE_ROOT_TOKEN = "IMAGE_ROOT"
+class AutoHTMLImage(HTMLImage):
+    def __init__(self, rel_path, *args, **kwargs):
+        super().__init__(
+            f"{IMAGE_ROOT_TOKEN}/{rel_path}",
+            *args, **kwargs
+        )
 
 class HTMLProgress(HTMLChild):
     def __init__(self, value, maxx, *args, **kwargs):

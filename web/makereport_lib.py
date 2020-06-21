@@ -3,7 +3,8 @@
 from wolframclient.language import wl
 
 from mlib.boot.mlog import log
-from mlib.boot.mutil import log_invokation, Temp, shell, Folder
+from mlib.boot.mutil import log_invokation, Temp, shell, Folder, File
+from mlib.web.web import IMAGE_ROOT_TOKEN
 from mlib.wolf.wolfpy import WOLFRAM
 
 def update_report(new_url, pub_url):
@@ -25,11 +26,24 @@ def upload_wolf_webpage(htmlDoc, wolfFolder, permissions='Private', resource_fol
     return co[0]
 
 DOCS_FOLDER = Folder('docs')
+LOCAL_DOCS_FOLDER = Folder('_docs')
 
 @log_invokation(with_args=True, with_result=True)
-def prep_gitlfs_webpage(htmlDoc):
+def prep_webpage(htmlDoc, web_resources_root):
     DOCS_FOLDER.mkdir()
-    DOCS_FOLDER['index.html'].write(htmlDoc.getCode())
+    DOCS_FOLDER['index.html'].write(htmlDoc.getCode().replace(IMAGE_ROOT_TOKEN, web_resources_root))
     DOCS_FOLDER['style.css'].write(htmlDoc.stylesheet)
-    # "there is no step 3!"
-    return shell('git remote get-url origin').readlines()
+
+    LOCAL_DOCS_FOLDER.mkdir()
+    LOCAL_DOCS_FOLDER['index.html'].write(htmlDoc.getCode().replace(
+        IMAGE_ROOT_TOKEN,
+        File(DOCS_FOLDER).url()
+    ))
+    LOCAL_DOCS_FOLDER['style.css'].write(htmlDoc.stylesheet)
+
+@log_invokation()
+def push_docs():
+    shell('git reset').interact()
+    shell('git add docs').interact()
+    shell('git commit docs -m "auto-gen docs"').interact()
+    shell('git push').interact()
