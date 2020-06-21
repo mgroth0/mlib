@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
+import os
+import traceback
 
-from mlib.boot.mutil import isstr, log_invokation
+from mlib.boot.mutil import isstr, log_invokation, File, pwdf
 DARK_CSS = '''
 body {
     background:black;
@@ -37,16 +39,16 @@ width:100%;
 
 
 class HTMLPage:
-    def __init__(self,
-                 name,
-                 *children,
-                 # stylesheet=DARK_CSS.name,
-                 stylesheet=DARK_CSS,
-                 js='',
-                 subpages=(),
-                 ):
+    def __init__(
+            self,
+            name,
+            *children,
+            # stylesheet=DARK_CSS.name,
+            stylesheet=DARK_CSS,
+            js=''
+    ):
         self.name = name
-        self.children = children
+        self.children = list(children)
         self.stylesheet = stylesheet
         self.js = js
 
@@ -84,7 +86,13 @@ def HTMLIndex(*pages):
         'index',
         *[Hyperlink(page.name, f"{page.name}.html") for page in pages]
     )
-
+def Shadow():
+    ref = 0
+    stack = traceback.extract_stack()
+    file = os.path.abspath(stack[-2 - ref][0]).split('.')[0]
+    return HTMLPage(
+        name=File(file).rel_to(pwdf())
+    )
 class HTMLObject(ABC):
     def __init__(self, style='', clazz='', id=None):
         self.style = style
