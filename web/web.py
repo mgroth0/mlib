@@ -2,7 +2,12 @@ from abc import ABC, abstractmethod
 import os
 import traceback
 
+from pygments import highlight
+from pygments.formatters.html import HtmlFormatter
+from pygments.lexers.python import PythonLexer
+
 from mlib.boot.mutil import isstr, log_invokation, File, pwdf
+
 DARK_CSS = '''
 body {
     background:black;
@@ -38,6 +43,7 @@ width:100%;
 '''
 
 
+
 class HTMLPage:
     def __init__(
             self,
@@ -52,9 +58,18 @@ class HTMLPage:
         self.stylesheet = stylesheet
         self.js = js
 
+        from mlib.web.makereport_lib import LOCAL_DOCS_FOLDER
+        self.local_page_file = File(LOCAL_DOCS_FOLDER[f'{self.name}.html'])
+
+
+
+
+
     def write(self):
         from mlib.web.makereport_lib import write_webpage
-        return write_webpage(self)
+        return write_webpage(self)  # returns local file
+    def open(self):
+        self.local_page_file.open()
 
     @log_invokation()
     def getCode(self):
@@ -79,9 +94,17 @@ class HTMLPage:
         ml += HTMLBody(*self.children).getCode()
         ml += '</html>'
         return ml
-
 def HTMLIndex(*pages):
+    for page in pages:
+        num_parents = len(page.name.split('/')) - 1
+        parents = '../' * num_parents
+        page.children.append(Hyperlink(
+            'Back to Index',
+            f'{parents}index.html',
+            style='position: fixed; bottom: 0;'
+        ))
     [page.write() for page in pages]
+
     return HTMLPage(
         'index',
         *[Hyperlink(page.name, f"{page.name}.html") for page in pages]
@@ -90,8 +113,19 @@ def Shadow():
     ref = 0
     stack = traceback.extract_stack()
     file = os.path.abspath(stack[-2 - ref][0]).split('.')[0]
+    local_file = File(file)
+    lines_of_code = File(local_file.abspath + '.py').read().split('\n')
+    lines_of_code = [highlight(
+        line,
+        PythonLexer(),
+        HtmlFormatter(
+            noclasses=True,
+            nobackground=True
+        )
+    ) for line in lines_of_code]
     return HTMLPage(
-        name=File(file).rel_to(pwdf())
+        local_file.rel_to(pwdf()),
+        Div(*lines_of_code)
     )
 class HTMLObject(ABC):
     def __init__(self, style='', clazz='', id=None):

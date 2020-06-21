@@ -30,6 +30,8 @@ DOCS_FOLDER = Folder('docs')
 LOCAL_DOCS_FOLDER = Folder('_docs')
 GITHUB_LFS_IMAGE_ROOT = 'https://media.githubusercontent.com/media/mgroth0/'
 
+# REMOTE_ROOT = ''.join(shell('git config --get remote.origin.url').readlines()) + '/blob/master/'
+
 @log_invokation(with_args=True, with_result=True)
 def write_webpage(htmlDoc):
     pwdname = pwdf().name
@@ -43,14 +45,13 @@ def write_webpage(htmlDoc):
     page_parent['style.css'].write(htmlDoc.stylesheet)
 
     LOCAL_DOCS_FOLDER.mkdir()
-    local_page_file = LOCAL_DOCS_FOLDER[f'{htmlDoc.name}.html']
-    local_page_parent = Folder(File(local_page_file).parentDir)
-    local_page_file.write(htmlDoc.getCode().replace(
+    local_page_parent = Folder(htmlDoc.local_page_file.parentDir)
+    htmlDoc.local_page_file.write(htmlDoc.getCode().replace(
         IMAGE_ROOT_TOKEN,
         File(DOCS_FOLDER).url()
     ))
     local_page_parent['style.css'].write(htmlDoc.stylesheet)
-    return local_page_file
+    return htmlDoc.local_page_file
 
 @log_invokation()
 def push_docs():
