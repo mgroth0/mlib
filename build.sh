@@ -20,4 +20,7 @@ git push
 "$HOME"/miniconda3/envs/build/bin/python -m twine check dist/*
 "$HOME"/miniconda3/envs/build/bin/python -m twine upload --repository testpypi dist/*
 #"--record" "files2.txt"
+
+/Users/matt/miniconda3/envs/build/bin/conda-build .
+
 cd $oldPWD

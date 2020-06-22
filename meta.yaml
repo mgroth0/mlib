@@ -1,0 +1,22 @@
+package:
+  name: mlib-mgroth0
+  version: 0.0.16
+
+#source:
+#  git_rev:
+#  git_url:
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+
+#test:
+#  imports:
+#    -
+#
+#about:
+#  home:
