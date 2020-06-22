@@ -12,12 +12,15 @@ source:
 
 requirements:
   build:
-    - python
+    - python ==3.8.3
     - setuptools
-
+    - pip
   run:
     - python
 
+
+# having this section means creating a test env
+# removing this seciton avoids creating a test env completely
 test:
   imports:
     - mlib
