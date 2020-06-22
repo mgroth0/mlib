@@ -511,6 +511,8 @@ class File(os.PathLike, MutableMapping):
         # self.isdir = os.path.isdir(self.abspath)
 
         self.mker = mker
+        if mker:
+            self.mkdirs()
 
         if w is not None:
             self.write(w)
@@ -805,9 +807,8 @@ class File(os.PathLike, MutableMapping):
 
 
 def main_mod_file():
-    return File(
-        os.path.abspath(sys.modules['__main__'].__file__)
-    )
+    if hasattr(sys.modules['__main__'],'__file__'):
+        return File(os.path.abspath(sys.modules['__main__'].__file__))
 
 class Folder(File):
     def __init__(self, *args, **kwargs):
