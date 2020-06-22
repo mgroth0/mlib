@@ -5,6 +5,9 @@ package:
 #source:
 #  git_rev:
 #  git_url:
+build:
+  number: 0
+  script: "python -m pip install . --no-deps --ignore-installed -vv "
 
 requirements:
   build:
@@ -14,9 +17,9 @@ requirements:
   run:
     - python
 
-#test:
-#  imports:
-#    -
-#
+test:
+  imports:
+    - mlib
+
 #about:
 #  home:
