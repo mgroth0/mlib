@@ -15,7 +15,7 @@ def list_reqs():
 breakpoint()
 setuptools.setup(
     name="mlib-mgroth0",
-    version="0.0.13",
+    version="0.0.14",
     author="Matt Groth",
     author_email="mjgroth@mit.edu",
     description="Matt's lib",
