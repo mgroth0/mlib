@@ -2,6 +2,16 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
+def list_reqs():
+    reqs = []
+    with open("reqs_pip.txt", "r") as f:
+        for line in f.read().split('\n'):
+            reqs.append(line.strip())
+    with open("reqs_conda.txt", "r") as f:
+        for line in f.read().split('\n'):
+            if line.startswith("#"): continue
+            reqs.append(''.join(line.strip().split("=")[0:1]))
+    return reqs
 setuptools.setup(
     name="mlib-mgroth0",
     version="0.0.11",
@@ -18,9 +28,7 @@ setuptools.setup(
         "Operating System :: MacOS :: MacOS X",
     ],
     python_requires='>=3.8',
-    install_requires=[
-        'pexpect',
-    ]
+    install_requires=list_reqs()
     # use_incremental=True,
     # setup_requires=['incremental'],
     # install_requires=['incremental']  # along with any other install dependencies
