@@ -16,7 +16,7 @@ def list_reqs():
     return reqs
 setuptools.setup(
     name="mlib-mgroth0",
-    version="0.0.14",
+    version="0.0.15",
     author="Matt Groth",
     author_email="mjgroth@mit.edu",
     description="Matt's lib",
