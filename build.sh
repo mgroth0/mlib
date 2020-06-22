@@ -4,6 +4,7 @@ pwd
 echo "ls -a:"
 ls -a
 #"$HOME"/miniconda3/envs/build/bin/python setup.py sdist bdist_wheel
+conda install --file reqs_conda.txt
 python -m pip install --no-deps --ignore-installed .
 #"$HOME"/miniconda3/envs/build/bin/python -m twine check dist/*
 #$PYTHON setup.py install
