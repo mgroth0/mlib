@@ -3,7 +3,7 @@ package:
   version: 0.0.27
 
 source:
-  path: mlib
+  path: .
 #  git_rev:
 #  git_url:
 #build:
