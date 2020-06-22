@@ -1,12 +1,6 @@
 from abc import ABC, abstractmethod
-import os
-import traceback
 
-from pygments import highlight
-from pygments.formatters.html import HtmlFormatter
-from pygments.lexers.python import PythonLexer
-
-from mlib.boot.mutil import isstr, log_invokation, File, pwdf
+from mlib.boot.mutil import isstr, log_invokation, File
 
 DARK_CSS = '''
 body {
@@ -51,25 +45,21 @@ class HTMLPage:
             *children,
             # stylesheet=DARK_CSS.name,
             stylesheet=DARK_CSS,
-            js=''
+            js='',
+            show=False
     ):
         self.name = name
         self.children = list(children)
         self.stylesheet = stylesheet
         self.js = js
-
-        from mlib.web.makereport_lib import LOCAL_DOCS_FOLDER
-        self.local_page_file = File(LOCAL_DOCS_FOLDER[f'{self.name}.html'])
+        self.show = show
 
 
 
+    def add(self, child): self.children.append(child)
 
 
-    def write(self):
-        from mlib.web.makereport_lib import write_webpage
-        return write_webpage(self)  # returns local file
-    def open(self):
-        self.local_page_file.open()
+
 
     @log_invokation()
     def getCode(self):
@@ -94,44 +84,12 @@ class HTMLPage:
         ml += HTMLBody(*self.children).getCode()
         ml += '</html>'
         return ml
-def HTMLIndex(*pages):
-    for page in pages:
-        num_parents = len(page.name.split('/')) - 1
-        parents = '../' * num_parents
-        page.children.append(Hyperlink(
-            'Back to Index',
-            f'{parents}index.html',
-            style='position: fixed; bottom: 0;'
-        ))
-    [page.write() for page in pages]
 
-    return HTMLPage(
-        'index',
-        *[Hyperlink(page.name, f"{page.name}.html") for page in pages]
-    )
-def Shadow():
-    ref = 0
-    stack = traceback.extract_stack()
-    file = os.path.abspath(stack[-2 - ref][0]).split('.')[0]
-    local_file = File(file)
-    lines_of_code = File(local_file.abspath + '.py').read().split('\n')
-    lines_of_code = [highlight(
-        line,
-        PythonLexer(),
-        HtmlFormatter(
-            noclasses=True,
-            nobackground=True
-        )
-    ) for line in lines_of_code]
-    return HTMLPage(
-        local_file.rel_to(pwdf()),
-        Div(*lines_of_code)
-    )
 class HTMLObject(ABC):
-    def __init__(self, style='', clazz='', id=None):
+    def __init__(self, style='', clazz='', idd=None):
         self.style = style
         self.clazz = clazz
-        self.id = id
+        self.id = idd
     @staticmethod
     @abstractmethod
     def tag():
@@ -175,9 +133,9 @@ class HTMLObject(ABC):
             self):
         return '<' + self.tag() + self._class() + self._style() + self._attributes() + '>' + self.contents() + self.closingTag()
 
-class HTMLContainer(HTMLObject):
+class HTMLParent(HTMLObject):
     def __init__(self, *args, **kwargs):
-        super(HTMLContainer, self).__init__(**kwargs)
+        super(HTMLParent, self).__init__(**kwargs)
         self.objs = args
 
     def closingTag(self):
@@ -199,16 +157,23 @@ class HTMLContainer(HTMLObject):
                 ml += self.sep()
         return ml
 
-class HTMLVar(HTMLContainer):
-    def __init__(self, id, var):
-        super(HTMLVar, self).__init__(var, id=id)
+class HTMLContainer(HTMLParent):
+    def attributes(self): return ''
+    @staticmethod
+    def tag(): return 'container'
+    @staticmethod
+    def sep(): return ''
+
+class HTMLVar(HTMLParent):
+    def __init__(self, idd, var):
+        super(HTMLVar, self).__init__(var, id=idd)
     def attributes(self): return 'hidden'
     @staticmethod
     def tag(): return 'p'
     @staticmethod
     def sep(): return ''
 
-class HTMLBody(HTMLContainer):
+class HTMLBody(HTMLParent):
     def attributes(self): return ''
     @staticmethod
     def tag(): return 'body'
@@ -217,49 +182,49 @@ class HTMLBody(HTMLContainer):
 
 
 
-class Div(HTMLContainer):
+class Div(HTMLParent):
     def attributes(self): return ''
     @staticmethod
     def tag(): return 'div'
     @staticmethod
     def sep(): return ''
 
-class Span(HTMLContainer):
+class Span(HTMLParent):
     def attributes(self): return ''
     @staticmethod
     def tag(): return 'span'
     @staticmethod
     def sep(): return ''
 
-class Table(HTMLContainer):
+class Table(HTMLParent):
     def attributes(self): return ''
     @staticmethod
     def tag(): return 'table'
     @staticmethod
     def sep(): return ''
 
-class TableRow(HTMLContainer):
+class TableRow(HTMLParent):
     def attributes(self): return ''
     @staticmethod
     def tag(): return 'tr'
     @staticmethod
     def sep(): return ''
 
-class DataCell(HTMLContainer):
+class DataCell(HTMLParent):
     def attributes(self): return ''
     @staticmethod
     def tag(): return 'td'
     @staticmethod
     def sep(): return ''
 
-class P(HTMLContainer):
+class P(HTMLParent):
     def attributes(self): return ''
     @staticmethod
     def tag(): return 'p'
     @staticmethod
     def sep(): return ''
 
-class TextArea(HTMLContainer):
+class TextArea(HTMLParent):
     def __init__(self, text='', **kwargs):
         super(TextArea, self).__init__(text, **kwargs)
         self.text = text
@@ -269,7 +234,7 @@ class TextArea(HTMLContainer):
     @staticmethod
     def sep(): return ''
 
-class Hyperlink(HTMLContainer):
+class Hyperlink(HTMLParent):
     def __init__(self, label, url, *args, **kwargs):
         super().__init__(label, *args, **kwargs)
         self.url = url
@@ -279,7 +244,7 @@ class Hyperlink(HTMLContainer):
     def sep(): return ''
     def attributes(self): return f'href="{self.url}"'
 
-class HTMLLabel(HTMLContainer):
+class HTMLLabel(HTMLParent):
     def __init__(self, label, forr, *args, **kwargs):
         super().__init__(label, *args, **kwargs)
         self.forr = forr
@@ -289,7 +254,7 @@ class HTMLLabel(HTMLContainer):
     def sep(): return ''
     def attributes(self): return f'for="{self.forr}"'
 
-class HTMLFigure(HTMLContainer):
+class HTMLFigure(HTMLParent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     @staticmethod
@@ -298,7 +263,7 @@ class HTMLFigure(HTMLContainer):
     def sep(): return ''
     def attributes(self): return ''
 
-class HTMLFigCaption(HTMLContainer):
+class HTMLFigCaption(HTMLParent):
     def __init__(self, label, *args, **kwargs):
         super().__init__(label, *args, **kwargs)
         self.label = label
@@ -330,12 +295,7 @@ class HTMLImage(HTMLChild):
     def tag(): return 'img'
     def attributes(self): return f'src="{self.url}" alt="an image" width="500"'
 IMAGE_ROOT_TOKEN = "IMAGE_ROOT"
-class AutoHTMLImage(HTMLImage):
-    def __init__(self, rel_path, *args, **kwargs):
-        super().__init__(
-            f"{IMAGE_ROOT_TOKEN}/{rel_path}",
-            *args, **kwargs
-        )
+
 
 class HTMLProgress(HTMLChild):
     def __init__(self, value, maxx, *args, **kwargs):

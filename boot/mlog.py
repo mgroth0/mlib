@@ -1,3 +1,4 @@
+from logging import warning
 import os
 import time
 
@@ -143,9 +144,15 @@ def get_log_info(old_s, *args, ref=0):
     for idx, aa in enumerate(args):
         ss = ss.replace("$", str(aa), 1)
     stack = traceback.extract_stack()
+    indx = -3 - ref
+    while len(stack) < abs(indx):
+        if indx < 0:
+            indx = indx + 1
+        else:
+            indx = indx - 1
     file = {
         1: 'MATLAB'
-    }.get(len(stack), os.path.basename(stack[-3 - ref][0]).split('.')[0])
+    }.get(len(stack), os.path.basename(stack[indx][0]).split('.')[0])
     line_start = f'[{processTag()}|{toc_str(t)}|'
     if not mac:
         if not gpu_q.empty():
@@ -154,6 +161,15 @@ def get_log_info(old_s, *args, ref=0):
     line = f'{line_start}{resize_str(file, 14)}] {ss}'
     file_line = f'{line_start}{resize_str(file, 10)}) {old_s}'
     return line, file_line, t
+
+warnings = []
+def warn(ss, *args, silent=False, ref=0):
+    ref = ref + 1  # or minus 1? I think its plus
+    from mlib.boot.mutil import lreds
+    ss = lreds(ss)
+    log(f'WARNING:{ss}', *args, silent=silent, ref=ref)
+    warning(ss)
+    warnings.append(ss)
 
 def log(ss, *args, silent=False, ref=0):
     line, file_line, v = get_log_info(ss, *args, ref=ref)
@@ -194,5 +210,3 @@ def processName():
     else:
         import multiprocessing
         return multiprocessing.current_process().name
-
-

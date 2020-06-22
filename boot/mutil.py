@@ -1,5 +1,7 @@
 import asyncio
 import atexit
+from collections import MutableMapping
+from functools import wraps
 import json
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
@@ -13,6 +15,7 @@ import threading
 # log('mutil imports..')
 from collections.abc import Iterable
 from pathlib import Path
+from time import time
 import traceback
 from types import SimpleNamespace
 
@@ -29,8 +32,9 @@ from mlib.boot import mlog
 from mlib.boot.bootutil import pwd
 from mlib.boot.mlog import log
 
-def log_invokation(with_class=False, with_instance=False, with_args=False, with_result=False):
-    def f(ff):
+def log_invokation(_func=None, *, with_class=False, with_instance=False, with_args=False, with_result=False):
+    def actual_dec(ff):
+        @wraps(ff)
         def fff(*args, **kwargs):
             ags = '' if not with_args else f'{args=}{kwargs=}'
             inst = '' if not with_instance else f' of {args[0]}'
@@ -42,13 +46,29 @@ def log_invokation(with_class=False, with_instance=False, with_args=False, with_
             log(f'Finished {s}!{r_str}', ref=1)
             return result
         return fff
-    return f
+
+    if _func is None:
+        # called with args. return the ACTUAL decoration
+        return actual_dec
+    else:
+        # called with no args (_func magically added as first arg). This IS the decoration
+        return actual_dec(_func)
 
 def listfiles(f): return File(f).listfiles()
 
 def filename(o):
     return File(o).name
 from colorama import Fore, Style
+
+def greens(s): return f'{Fore.GREEN}{s}{Style.RESET_ALL}'
+def reds(s): return f'{Fore.RED}{s}{Style.RESET_ALL}'
+def lreds(s): return f'{Fore.LIGHTRED_EX}{s}{Style.RESET_ALL}'
+def blues(s): return f'{Fore.BLUE}{s}{Style.RESET_ALL}'
+def yellows(s): return f'{Fore.YELLOW}{s}{Style.RESET_ALL}'
+def magentas(s): return f'{Fore.MAGENTA}{s}{Style.RESET_ALL}'
+def cyans(s): return f'{Fore.CYAN}{s}{Style.RESET_ALL}'
+
+
 class Progress:
     erase = '\x1b[1A\x1b[2K'
 
@@ -68,7 +88,7 @@ class Progress:
         self._instances.remove(self)
 
     # PROG_CHAR = '|'
-    PROG_CHAR = f'{Fore.GREEN}▮{Style.RESET_ALL}'
+    PROG_CHAR = greens('▮')
     @staticmethod
     def prog_bar(n, d=100, BAR_LENGTH=50):
         progress = round((n / d) * 100)
@@ -192,15 +212,22 @@ def osascript(script):
 
 
 
+
 class ShellProcess:
+    @staticmethod
+    def com_arg(a):
+        if isinstsafe(a, File):
+            return a.abspath
+        else:
+            return str(a)
     @staticmethod
     def command_str(*args):
         if len(args) == 0: return ''
         elif len(args) > 1:
-            return ' '.join(list(map(str, args)))
+            return ' '.join(list(map(ShellProcess.com_arg, args)))
         elif is_non_str_itr(args[0]):
-            return ' '.join(list(map(str, args[0])))
-        else: return str(args[0])
+            return ' '.join(list(map(ShellProcess.com_arg, args[0])))
+        else: return ShellProcess.com_arg(args[0])
     def __init__(self, *command, silent=False, timeout=None, logfile_read=None):
         self.command = shell.command_str(*command)
         if not silent:
@@ -296,8 +323,11 @@ class InteractiveShell(ShellProcess):
 
 
 
+
+
 shell = ShellProcess
 ishell = InteractiveShell
+
 
 
 
@@ -451,7 +481,8 @@ def testInPools(f, li, af,
 
 
 
-class File(os.PathLike):
+class File(os.PathLike, MutableMapping):
+
     def __init__(self, abspath, remote=None, mker=False, w=None):
         if isinstsafe(abspath, File):
             self.isSSH = abspath.isSSH
@@ -484,6 +515,15 @@ class File(os.PathLike):
         if w is not None:
             self.write(w)
 
+        self.rel = os.path.relpath(abspath, pwd())
+
+        self.default_quiet = None
+
+    def __len__(self) -> int:
+        return len(self.load())
+    def __iter__(self):
+        return iter(self.load())
+
     def rel_to(self, parent):
         parent = File(parent).abspath
         # com = os.path.commonprefix([parent, self.abspath])
@@ -510,7 +550,8 @@ class File(os.PathLike):
         return self.zip_to(self)
 
     def zip_to(self, dest):
-        mlog.log('zipping...')
+        if not self.default_quiet:
+            mlog.log('zipping...')
         p = ishell()
         p.cd(self.parentDir)
         p.sendline('DONEVAR=DONEWITHZIP')
@@ -541,7 +582,8 @@ class File(os.PathLike):
     def loado(self):
         return self.load(as_object=True)
     def load(self, as_object=False):
-        log('Loading ' + self.abspath, ref=1)
+        if not self.default_quiet:
+            log('Loading ' + self.abspath, ref=1)
         if self.ext == 'edf':
             import mne
             import HEP_lib
@@ -563,7 +605,7 @@ class File(os.PathLike):
         else:
             err('loading does not yet support .' + self.ext + ' files')
 
-    def save(self, data, silent=False):
+    def save(self, data, silent=None):
         import mlib.JsonSerializable as JsonSerializable
         import mlib.FigData as FigData
         if isinstance(data, FigData.PlotOrSomething):
@@ -572,7 +614,7 @@ class File(os.PathLike):
             data = json.loads(data.to_json())
         elif isinstance(data, JsonSerializable.obj):
             data = data.toDict()
-        if not silent:
+        if not silent and not self.default_quiet or (silent is False):
             log('saving ' + self.abspath)
         if self.ext == 'json':
             self.mkparents()
@@ -684,10 +726,12 @@ class File(os.PathLike):
     def __delitem__(self, key):
         assert (self.exists())
         data = self.load()
-        log('deleting ' + str(key))
+        if not self.default_quiet:
+            log('deleting ' + str(key))
         del data[key]
         self.save(data)
-        log('deleted ' + str(key))
+        if not self.default_quiet:
+            log('deleted ' + str(key))
 
 
 
@@ -696,10 +740,12 @@ class File(os.PathLike):
             data = self.load()
         else:
             data = {}
-        log('saving ' + str(key))  # +' to ' + str(value)
+        if not self.default_quiet:
+            log('saving ' + str(key))  # +' to ' + str(value)
         data[key] = value
         self.save(data)
-        log('saved ' + str(key))  # +' to ' + str(value)
+        if not self.default_quiet:
+            log('saved ' + str(key))  # +' to ' + str(value)
 
     def msecs(self):
         return os.path.getmtime(self.abspath)
@@ -757,6 +803,11 @@ class File(os.PathLike):
             path = File(head).abspath
         return list(reversed(nams))
 
+
+def main_mod_file():
+    return File(
+        os.path.abspath(sys.modules['__main__'].__file__)
+    )
 
 class Folder(File):
     def __init__(self, *args, **kwargs):
@@ -1682,3 +1733,32 @@ class SyncedDataFolder(SyncedFolder):
 def functionalize(f):
     def ff(): return f
     return ff
+
+GIT_IGNORE = File('.gitignore')
+GIT_DIR = Folder('.git')
+class PermaDict(MutableMapping):
+    def __init__(self, file):
+        self.file = File(file)
+        if not self.file.exists(): self.file.write('{}')
+        self.file.default_quiet = True
+    def check(self):
+        if not self.file.rel.startswith('_'):
+            err('PermaDicts should be private (start with _)')
+        if GIT_DIR.exists() and (not GIT_IGNORE.exists() or '/_*' not in GIT_IGNORE.read()):
+            err(f'{self.file} needs to be ignored')
+        if not self.file.exists():
+            self.file.write('{}')
+    def __getitem__(self, val):
+        self.check()
+        return self.file[val]
+    def __setitem__(self, key, value):
+        self.check()
+        self.file[key] = value
+    def __delitem__(self, key): del self.file[key]
+    def __iter__(self): return iter(self.file)
+    def __len__(self): return len(self.file)
+
+
+
+def singleton(cls):
+    return cls()

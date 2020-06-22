@@ -1,7 +1,7 @@
 from typing import Optional
 
-import matplotlib
-matplotlib.use('Agg')  # I think tight_layout needs this?
+# import matplotlib
+# matplotlib.use('Agg')  # I think tight_layout needs this?
 # matplotlib.use('PS')  # prevents matplotlib 'app' from opening. This needs to be used before pyplot is ever imported.
 from matplotlib import pyplot as plt, rcParams
 
@@ -113,7 +113,7 @@ def makefig(
                 else:
                     fd.show(axs[r, c])
         fig.tight_layout(pad=3.0)
-        if not file:
+        if file is None:
             plt.show()
         else:
             File(file).mkparents()

@@ -2,7 +2,6 @@
 
 from wolframclient.language import wl
 
-from mlib.boot.bootutil import pwd
 from mlib.boot.mlog import log
 from mlib.boot.mutil import log_invokation, Temp, shell, Folder, File, pwdf
 from mlib.web.web import IMAGE_ROOT_TOKEN
@@ -26,32 +25,40 @@ def upload_wolf_webpage(htmlDoc, wolfFolder, permissions='Private', resource_fol
         WOLFRAM.copy_file(resource_folder, f'Resources/{wolfFolder}', permissions=permissions)
     return co[0]
 
-DOCS_FOLDER = Folder('docs')
-LOCAL_DOCS_FOLDER = Folder('_docs')
-GITHUB_LFS_IMAGE_ROOT = 'https://media.githubusercontent.com/media/mgroth0/'
+
 
 # REMOTE_ROOT = ''.join(shell('git config --get remote.origin.url').readlines()) + '/blob/master/'
 
 @log_invokation(with_args=True, with_result=True)
-def write_webpage(htmlDoc):
+def write_webpage(
+        htmlDoc,
+        docs_folder,
+        image_root,
+        local_docs_folder
+):
     pwdname = pwdf().name
 
-    web_resources_root = f'{GITHUB_LFS_IMAGE_ROOT}{pwdname}/master/{DOCS_FOLDER.name}'
+    web_resources_root = f'{image_root}{pwdname}/master/{docs_folder.name}'
 
-    DOCS_FOLDER.mkdir()
-    page_file = DOCS_FOLDER[f'{htmlDoc.name}.html']
+    docs_folder.mkdir()
+    page_file = docs_folder[f'{htmlDoc.name}.html']
     page_parent = Folder(File(page_file).parentDir)
+
     page_file.write(htmlDoc.getCode().replace(IMAGE_ROOT_TOKEN, web_resources_root))
+
     page_parent['style.css'].write(htmlDoc.stylesheet)
 
-    LOCAL_DOCS_FOLDER.mkdir()
-    local_page_parent = Folder(htmlDoc.local_page_file.parentDir)
-    htmlDoc.local_page_file.write(htmlDoc.getCode().replace(
+    local_docs_folder.mkdir()
+    local_page_file = File(local_docs_folder[f'{htmlDoc.name}.html'])
+    local_page_parent = Folder(local_page_file.parentDir)
+    local_page_file.write(htmlDoc.getCode().replace(
         IMAGE_ROOT_TOKEN,
-        File(DOCS_FOLDER).url()
+        File(docs_folder).url()
     ))
     local_page_parent['style.css'].write(htmlDoc.stylesheet)
-    return htmlDoc.local_page_file
+    if htmlDoc.show:
+        local_page_file.open()
+    return local_page_file
 
 @log_invokation()
 def push_docs():
@@ -59,3 +66,4 @@ def push_docs():
     shell('git add docs').interact()
     shell('git commit docs -m "auto-gen docs"').interact()
     shell('git push').interact()
+
