@@ -17,8 +17,11 @@ git add meta.yaml
 git commit -m "auto-commit build cfgs"
 git push
 #"$HOME"/miniconda3/bin/python -m incremental.update mlib --patch
-"$HOME"/miniconda3/envs/build/bin/python setup.py sdist bdist_wheel
-"$HOME"/miniconda3/envs/build/bin/python -m twine check dist/*
+
+
+#these are now run inside of conda-build
+#"$HOME"/miniconda3/envs/build/bin/python setup.py sdist bdist_wheel
+#"$HOME"/miniconda3/envs/build/bin/python -m twine check dist/*
 
 #no longer uploading to pypi because pip package doesnt work since there are conda deps
 #"$HOME"/miniconda3/envs/build/bin/python -m twine upload --repository testpypi dist/*
