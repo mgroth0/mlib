@@ -3,12 +3,12 @@ package:
   version: 0.0.25
 
 source:
-  path: .
+  path: mlib
 #  git_rev:
 #  git_url:
-#build:
-#  number: 0
-#  script: "python -m pip install . --no-deps --ignore-installed -vv "
+build:
+  number: 0
+  script: "$HOME""/miniconda3/envs/build/bin/python setup.py sdist bdist_wheel"
 
 requirements:
   build:
