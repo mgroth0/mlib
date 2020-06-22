@@ -13,6 +13,7 @@ rm -rf *.eeg-info ; rm -rf build ; rm -rf dist ;
 
 git add .bumpversion.cfg
 git add setup.py
+git add meta.yaml
 git commit -m "auto-commit build cfgs"
 git push
 #"$HOME"/miniconda3/bin/python -m incremental.update mlib --patch
