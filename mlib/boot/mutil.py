@@ -15,7 +15,6 @@ import threading
 # log('mutil imports..')
 from collections.abc import Iterable
 from pathlib import Path
-from time import time
 import traceback
 from types import SimpleNamespace
 
@@ -660,9 +659,13 @@ class File(os.PathLike, MutableMapping):
         return path
 
     def resolve(self, nam):
+        resolved_is_file = '.' in nam
         if not isstr(nam): nam = str(nam)
-        resolved = File(os.path.join(self.abspath, nam), mker=self.mker)
-        if self.mker and not resolved.exists() and '.' not in nam:
+        resolved = File(
+            os.path.join(self.abspath, nam),
+            mker=False if resolved_is_file else self.mker
+        )
+        if self.mker and not resolved.exists() and not resolved_is_file:
             resolved.mkdir()
         if resolved.exists() and resolved.isdir(): return Folder(resolved, mker=self.mker)
         return resolved
@@ -807,7 +810,7 @@ class File(os.PathLike, MutableMapping):
 
 
 def main_mod_file():
-    if hasattr(sys.modules['__main__'],'__file__'):
+    if hasattr(sys.modules['__main__'], '__file__'):
         return File(os.path.abspath(sys.modules['__main__'].__file__))
 
 class Folder(File):
