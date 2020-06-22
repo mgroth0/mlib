@@ -5,6 +5,7 @@ rm -rf *.eeg-info ; echo test ; rm -rf build ; rm -rf dist ;
 git add .bumpversion.cfg
 git add setup.py
 git commit -m "auto-commit build cfgs"
+git push
 #"$HOME"/miniconda3/bin/python -m incremental.update mlib --patch
 "$HOME"/miniconda3/bin/python setup.py sdist bdist_wheel
 "$HOME"/miniconda3/bin/python -m twine check dist/*
