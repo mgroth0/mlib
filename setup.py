@@ -10,7 +10,7 @@ def list_reqs():
     with open("reqs_conda.txt", "r") as f:
         for line in f.read().split('\n'):
             if line.startswith("#"): continue
-            reqs.append(''.join(line.strip().split("=")[0:1]))
+            reqs.append('='.join(line.strip().split("=")[0:2]))
     return reqs
 setuptools.setup(
     name="mlib-mgroth0",
