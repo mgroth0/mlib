@@ -2,6 +2,7 @@
 # $ conda create --name <env> --file <this file>
 # platform: osx-64
 ca-certificates=2020.6.20=hecda079_0
+certifi=2020.6.20=py38h32f6830_0
 freetype=2.10.2=h8da9a1a_0
 jpeg=9d=h0b31af3_0
 libblas=3.8.0=16_openblas
@@ -17,6 +18,7 @@ libwebp-base=1.1.0=h0b31af3_3
 llvm-openmp=10.0.0=h28b9765_0
 lz4-c=1.9.2=h4a8c4bd_1
 ncurses=6.1=h0a44026_1002
+numpy=1.18.5=py38h1f821a2_0
 openssl=1.1.1g=h0b31af3_0
 pip=20.1.1=py_1
 python=3.8.3=cpython_hd5f0129_0
