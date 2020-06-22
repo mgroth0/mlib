@@ -6,9 +6,9 @@ source:
   path: mlib
 #  git_rev:
 #  git_url:
-build:
-  number: 0
-  script: "$HOME""/miniconda3/envs/build/bin/python setup.py sdist bdist_wheel"
+#build:
+#  number: 0
+#  script: "$HOME""/miniconda3/envs/build/bin/python setup.py sdist bdist_wheel"
 
 requirements:
   build:
