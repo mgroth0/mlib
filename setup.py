@@ -12,6 +12,7 @@ def list_reqs():
             if line.startswith("#"): continue
             reqs.append('='.join(line.strip().split("=")[0:2]))
     return reqs
+breakpoint()
 setuptools.setup(
     name="mlib-mgroth0",
     version="0.0.13",
