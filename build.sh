@@ -3,5 +3,5 @@ echo "inside build.sh in:"
 pwd
 echo "ls:"
 ls
-$PYTHON setup.py install
+#$PYTHON setup.py install
 echo "finished build.sh"

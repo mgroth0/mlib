@@ -2,7 +2,8 @@ package:
   name: mlib-mgroth0
   version: 0.0.24
 
-#source:
+source:
+  path: .
 #  git_rev:
 #  git_url:
 #build:
