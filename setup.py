@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mlib-mgroth0",
-    version="0.0.35",
+    version="0.0.36",
     author="Matt Groth",
     author_email="mjgroth@mit.edu",
     description="Matt's lib",
