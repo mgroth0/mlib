@@ -39,8 +39,6 @@ requirements:
     - python
     - pip #requires setuptools which reqs wheel
   run:
-    - python ==3.8.3
-    - numpy ==1.18.5
 '''+reqs+'''
 # having this section means creating a test env
 # removing this seciton avoids creating a test env completely

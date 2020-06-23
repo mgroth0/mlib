@@ -1,7 +1,7 @@
-pexpect
 python
-packaging
-colorama
 imageio
+colorama
+pexpect
 scipy
+packaging
 pyyaml

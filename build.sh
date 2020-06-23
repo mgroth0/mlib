@@ -9,6 +9,7 @@ ls -a
 #conda install --file reqs_conda.txt
 echo "build.sh: pip install"
 python -m pip install --no-deps --ignore-installed .
+python -m pip install -r reqs_pip.txt
 #"$HOME"/miniconda3/envs/build/bin/python -m twine check dist/*
 #$PYTHON setup.py install
 echo "build.sh: finished"
