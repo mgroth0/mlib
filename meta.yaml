@@ -1,7 +1,7 @@
 
 package:
   name: mlib-mgroth0
-  version: 0.0.36
+  version: 0.0.37
 source:
   path: .
 requirements:
@@ -9,8 +9,6 @@ requirements:
     - python
     - pip #requires setuptools which reqs wheel
   run:
-    - python ==3.8.3
-    - numpy ==1.18.5
 
     - colorama ==0.4.3
     - imageio ==2.8.0
