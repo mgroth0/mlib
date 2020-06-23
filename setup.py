@@ -30,7 +30,7 @@ setuptools.setup(
         "Operating System :: MacOS :: MacOS X",
     ],
     python_requires='>=3.8',
-    install_requires=list_reqs()
+    # install_requires=list_reqs()
     # use_incremental=True,
     # setup_requires=['incremental'],
     # install_requires=['incremental']  # along with any other install dependencies
