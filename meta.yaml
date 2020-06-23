@@ -12,11 +12,12 @@ source:
 
 requirements:
   build:
-    - python ==3.8.3
+    - python
     - setuptools
     - pip
   run:
-    - python
+    - python ==3.8.3
+    - numpy ==1.18.5
 
 
 # having this section means creating a test env
