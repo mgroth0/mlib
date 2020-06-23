@@ -15,6 +15,7 @@ rm -rf *.eeg-info ; rm -rf build ; rm -rf dist ;
 # checks git is not dirty
 "$HOME"/miniconda3/envs/build/bin/python -m bumpversion patch # minor,major
 
+"$HOME"/miniconda3/bin/python conda-prune.py
 python metameta.py
 
 git add .bumpversion.cfg

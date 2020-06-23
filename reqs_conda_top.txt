@@ -1,0 +1,7 @@
+pexpect
+python
+packaging
+colorama
+imageio
+scipy
+pyyaml

@@ -1,4 +1,11 @@
 def list_reqs():
+
+    with open('reqs_conda_top.txt', 'r') as f:
+        t = f.read()
+        lines = t.split('\n')
+        lines = list(filter(lambda l: not l.strip() == '', lines))
+        tops = lines
+
     reqs = []
     # with open("reqs_pip.txt", "r") as f:
     #     for line in f.read().split('\n'):
@@ -8,6 +15,8 @@ def list_reqs():
         for line in f.read().split('\n'):
             if line.startswith("#"): continue
             if len(line.strip())==0: continue
+            short = line.strip().split('=')[0]
+            if short not in tops: continue
             reqs.append(' =='.join(line.strip().split("=")[0:2]))
     return reqs
 reqs = '\n    - ' + '\n    - '.join(list_reqs()) + '\n'
@@ -28,8 +37,7 @@ source:
 requirements:
   build:
     - python
-    - setuptools
-    - pip
+    - pip #requires setuptools which reqs wheel
   run:
     - python ==3.8.3
     - numpy ==1.18.5
