@@ -5,6 +5,9 @@ SCRIPTPATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 cd ""$SCRIPTPATH
 rm -rf *.eeg-info ; rm -rf build ; rm -rf dist ;
 #"$HOME"/miniconda3/envs/mlib/bin/pip freeze > reqs_pip.txt
+
+"$HOME"/miniconda3/envs/mlib/bin/python test.py
+
 "$HOME"/miniconda3/bin/conda list -n mlib -e > reqs_conda.txt; sed -i '' '/pypi/d' reqs_conda.txt
 
 

@@ -3,6 +3,7 @@
 # platform: osx-64
 ca-certificates=2020.6.20=hecda079_0
 certifi=2020.6.20=py38h32f6830_0
+colorama=0.4.3=py_0
 freetype=2.10.2=h8da9a1a_0
 imageio=2.8.0=py_0
 jpeg=9d=h0b31af3_0
@@ -22,13 +23,19 @@ ncurses=6.1=h0a44026_1002
 numpy=1.18.5=py38h1f821a2_0
 olefile=0.46=py_0
 openssl=1.1.1g=h0b31af3_0
+packaging=20.4=pyh9f0ad1d_0
+pexpect=4.8.0=py38h32f6830_1
 pillow=7.1.2=py38h83dc5e5_0
 pip=20.1.1=py_1
+ptyprocess=0.6.0=py_1001
+pyparsing=2.4.7=pyh9f0ad1d_0
 python=3.8.3=cpython_hd5f0129_0
 python_abi=3.8=1_cp38
 pyyaml=5.3.1=py38h64e0658_0
 readline=8.0=hcfe32e1_0
+scipy=1.4.1=py38h38b60c6_3
 setuptools=47.3.1=py38h32f6830_0
+six=1.15.0=pyh9f0ad1d_0
 sqlite=3.30.1=h93121df_0
 tk=8.6.10=hbbe82c9_0
 wheel=0.34.2=py_1
