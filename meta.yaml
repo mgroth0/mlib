@@ -1,7 +1,7 @@
 
 package:
   name: mlib-mgroth0
-  version: 0.0.34
+  version: 0.0.35
 source:
   path: .
 requirements:
@@ -15,6 +15,7 @@ requirements:
 
     - ca-certificates ==2020.6.20
     - certifi ==2020.6.20
+    - colorama ==0.4.3
     - freetype ==2.10.2
     - imageio ==2.8.0
     - jpeg ==9d
@@ -34,13 +35,19 @@ requirements:
     - numpy ==1.18.5
     - olefile ==0.46
     - openssl ==1.1.1g
+    - packaging ==20.4
+    - pexpect ==4.8.0
     - pillow ==7.1.2
     - pip ==20.1.1
+    - ptyprocess ==0.6.0
+    - pyparsing ==2.4.7
     - python ==3.8.3
     - python_abi ==3.8
     - pyyaml ==5.3.1
     - readline ==8.0
+    - scipy ==1.4.1
     - setuptools ==47.3.1
+    - six ==1.15.0
     - sqlite ==3.30.1
     - tk ==8.6.10
     - wheel ==0.34.2
