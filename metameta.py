@@ -11,11 +11,18 @@ def list_reqs():
             reqs.append(' =='.join(line.strip().split("=")[0:2]))
     return reqs
 reqs = '\n    - ' + '\n    - '.join(list_reqs()) + '\n'
+
+with open('.bumpversion.cfg','r') as f:
+    t = f.read()
+    for line in t.split('\n'):
+        if line.strip().startswith('current_version'):
+            version = line.split('=')[1].strip()
+
 with open('meta.yaml','w') as f:
     f.write('''
 package:
   name: mlib-mgroth0
-  version: 0.0.33
+  version: '''+version+'''
 source:
   path: .
 requirements:
@@ -26,7 +33,7 @@ requirements:
   run:
     - python ==3.8.3
     - numpy ==1.18.5
-''' + reqs +  '''
+'''+reqs+'''
 # having this section means creating a test env
 # removing this seciton avoids creating a test env completely
 test:

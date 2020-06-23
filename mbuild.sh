@@ -6,10 +6,13 @@ cd ""$SCRIPTPATH
 rm -rf *.eeg-info ; rm -rf build ; rm -rf dist ;
 #"$HOME"/miniconda3/envs/mlib/bin/pip freeze > reqs_pip.txt
 "$HOME"/miniconda3/bin/conda list -n mlib -e > reqs_conda.txt; sed -i '' '/pypi/d' reqs_conda.txt
-python metameta.py
+
+
+
 # checks git is not dirty
 "$HOME"/miniconda3/envs/build/bin/python -m bumpversion patch # minor,major
 
+python metameta.py
 
 git add .bumpversion.cfg
 git add setup.py
