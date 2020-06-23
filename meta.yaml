@@ -1,15 +1,8 @@
 package:
   name: mlib-mgroth0
   version: 0.0.33
-
 source:
   path: .
-#  git_rev:
-#  git_url:
-#build:
-#  number: 0
-#  script: "$HOME""/miniconda3/envs/build/bin/python setup.py sdist bdist_wheel"
-
 requirements:
   build:
     - python
@@ -18,13 +11,8 @@ requirements:
   run:
     - python ==3.8.3
     - numpy ==1.18.5
-
-
 # having this section means creating a test env
 # removing this seciton avoids creating a test env completely
 test:
   imports:
     - mlib
-
-#about:
-#  home:

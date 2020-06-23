@@ -2,18 +2,9 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-def list_reqs():
-    reqs = []
-    with open("reqs_pip.txt", "r") as f:
-        for line in f.read().split('\n'):
-            if len(line.strip())==0: continue
-            reqs.append(line.strip())
-    with open("reqs_conda.txt", "r") as f:
-        for line in f.read().split('\n'):
-            if line.startswith("#"): continue
-            if len(line.strip())==0: continue
-            reqs.append('=='.join(line.strip().split("=")[0:2]))
-    return reqs
+
+
+
 setuptools.setup(
     name="mlib-mgroth0",
     version="0.0.33",
