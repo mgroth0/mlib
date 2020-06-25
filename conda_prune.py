@@ -2,7 +2,7 @@ import subprocess
 
 from mlib.boot import log
 from mlib.file import strippedlines, load, File
-from mlib.shell import shell
+from mlib.shell import shell, spshell
 def conda_prune():
     # sometimes there are circular deps because of older versions. I'll just have to 'stop'
     tops = strippedlines('reqs_conda_top.txt')
@@ -24,7 +24,7 @@ def conda_prune():
             result = cache[line]
         else:
             log(f'searching {line}')
-            result = shell([
+            result = spshell([
                 'conda',
                 'search',
                 line,
