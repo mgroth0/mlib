@@ -1,26 +1,22 @@
-
 package:
   name: mlib-mgroth0
-  version: 0.0.38
+  version: 0.0.41
 source:
   path: .
+build:
+  script: python -m pip install --no-deps --ignore-installed .
 requirements:
   build:
-    - python
-    - pip #requires setuptools which reqs wheel
+  - python
+  - pip
   run:
-
-    - colorama ==0.4.3
-    - imageio ==2.8.0
-    - packaging ==20.4
-    - pexpect ==4.8.0
-    - python ==3.8.3
-    - pyyaml ==5.3.1
-    - scipy ==1.4.1
-    - wolframclient ==1.1.4
-
-# having this section means creating a test env
-# removing this seciton avoids creating a test env completely
+  - colorama ==0.4.3
+  - imageio ==2.8.0
+  - packaging ==20.4
+  - pexpect ==4.8.0
+  - python ==3.8.3
+  - pyyaml ==5.3.1
+  - scipy ==1.4.1
+  - wolframclient ==1.1.4
 test:
-  imports:
-    - mlib
+  imports: mlib

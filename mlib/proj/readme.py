@@ -1,3 +1,11 @@
+from mlib.boot.mutil import log_invokation
+from mlib.file import File
+@log_invokation
+def write_README():
+    File('README.md').write(README())
+def README():
+    return """
+
 setup.py ???
 
 [![Anaconda-Server Badge](https://anaconda.org/mgroth0/mlib-mgroth0/badges/version.svg)](https://anaconda.org/mgroth0/mlib-mgroth0)
@@ -139,3 +147,6 @@ Credits
  in these public readmes or reqs.txt I have to require a specifc mlib version
 
  have to also consider running and developing other executables here: human_exp_1 and human_analyze
+
+
+""".strip()

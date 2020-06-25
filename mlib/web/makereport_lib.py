@@ -3,7 +3,10 @@
 from wolframclient.language import wl
 
 from mlib.boot.mlog import log
-from mlib.boot.mutil import log_invokation, Temp, shell, Folder, File, pwdf
+from mlib.boot.mutil import log_invokation
+from mlib.proj.struct import pwdf
+from mlib.file import File, Folder, Temp
+from mlib.shell import shell
 from mlib.web.web import IMAGE_ROOT_TOKEN
 from mlib.wolf.wolfpy import WOLFRAM
 

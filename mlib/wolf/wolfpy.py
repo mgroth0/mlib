@@ -4,7 +4,9 @@ from wolframclient.evaluation import WolframLanguageSession
 from wolframclient.language import wl
 
 from mlib.boot.mlog import log
-from mlib.boot.mutil import File, strcmp, err, pwdf, log_invokation
+from mlib.boot.mutil import strcmp, err, log_invokation
+from mlib.proj.struct import pwdf
+from mlib.file import File
 from mlib.boot.bootutil import ismac
 
 class WolfPy:

@@ -1,0 +1,5 @@
+#!/bin/sh
+export MPLBACKEND=Agg
+
+# for now which env isn't critical since I define the env for each subcommand
+exec "$HOME/miniconda3/envs/mlib/bin/python" "mbuild.py" "$@"

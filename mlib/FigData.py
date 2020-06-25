@@ -5,7 +5,9 @@ from typing import Optional
 # matplotlib.use('PS')  # prevents matplotlib 'app' from opening. This needs to be used before pyplot is ever imported.
 from matplotlib import pyplot as plt, rcParams
 
-from mlib.boot.mutil import arr, isreal, kmscript, bitwise_and, File, log_invokation
+from mlib.boot.mutil import arr, isreal, bitwise_and, log_invokation
+from mlib.km import kmscript
+from mlib.file import File
 import numpy
 inf = numpy.inf
 from mlib.JsonSerializable import JsonSerializable, FigSet

@@ -1,0 +1,10 @@
+profiles:
+  proto: &proto
+    -placeholder1: null
+  default:
+      <<: *proto
+configs:
+  all: &all
+    -placeholder2: null
+  default:
+        <<: *all

@@ -1,7 +1,8 @@
-python
 scipy
-imageio
-colorama
-pyyaml
 pexpect
+pyyaml
+wolframclient
+python
 packaging
+colorama
+imageio

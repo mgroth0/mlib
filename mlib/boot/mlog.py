@@ -2,6 +2,7 @@ from logging import warning
 import os
 import time
 
+from mlib.boot.bootutil import pwd
 from mlib.gpu import gpu_mem_str
 
 USE_THREADING = False
@@ -26,10 +27,10 @@ def initTic():
         log('got tic')
 
 def getNextIncrementalFile(file):
-    import mlib.boot.mutil as mutil
-    file = mutil.File(file)
+    import mlib.file
+    file = mlib.file.File(file)
     onename = file.name.replace('.', '_1.')
-    onefile = mutil.File(file.parentDir).resolve(onename)
+    onefile = mlib.file.File(file.parentDir).resolve(onename)
     if not onefile.exists():
         return onefile
     else:
@@ -42,34 +43,35 @@ def getNextIncrementalFile(file):
             base = file.name.split('.')[0]
             ext = file.name.split('.')[1]
             n = 1
-        return mutil.File(file.parentDir).resolve(base + '_' + str(n) + '.' + ext)
+        return mlib.file.File(file.parentDir).resolve(base + '_' + str(n) + '.' + ext)
 
 def prep_log_file(filename, new=False):
     if filename is None:
         filename = os.path.basename(sys.argv[0]).replace('.py', '')
 
-    import mlib.boot.mutil as mutil
+
     import mlib.boot.bootutil as bootutil
     if bootutil.ismac():
-        filename = '_logs/local/' + filename
+        filename = f'_logs/local/{filename}.log'
     else:
-        filename = '_logs/remote/' + filename
+        filename = f'_logs/remote/{filename}.log'
 
-    filename = filename + '.log'
-    filename = mutil.MITILI_FOLDER().respath(filename)
+    from mlib.file import Folder
+    filename = Folder(pwd())[filename]
 
     if new:
         filename = getNextIncrementalFile(filename)
 
-    import mlib.boot.mutil as mutil
+    import mlib.file
     global LOG_FILE
     if LOG_FILE is None:
-        LOG_FILE = mutil.File(filename)
+        LOG_FILE = mlib.file.File(filename)
     if LOG_FILE.exists():
         LOG_FILE.delete()
     LOG_FILE.mkparents()
     LOG_FILE.touch()
-    log(f'Initialized log file: {mutil.File(LOG_FILE).relpath}')
+    from mlib.proj.project import QUIET
+    if not QUIET: log(f'Initialized log file: {mlib.file.File(LOG_FILE).relpath}')
 
 def setTic(t):
     global ticTime
@@ -158,8 +160,13 @@ def get_log_info(old_s, *args, ref=0):
         if not gpu_q.empty():
             latest_gpu_str = gpu_q.get()
         line_start = f'{line_start}{latest_gpu_str}|'
-    line = f'{line_start}{resize_str(file, 14)}] {ss}'
-    file_line = f'{line_start}{resize_str(file, 10)}) {old_s}'
+    from mlib.proj.project import QUIET
+    if QUIET:
+        line = ss
+        file_line = ss
+    else:
+        line = f'{line_start}{resize_str(file, 14)}] {ss}'
+        file_line = f'{line_start}{resize_str(file, 10)}) {old_s}'
     return line, file_line, t
 
 warnings = []

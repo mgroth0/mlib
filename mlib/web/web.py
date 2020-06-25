@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
-from mlib.boot.mutil import isstr, log_invokation, File
+from mlib.boot.mutil import isstr, log_invokation
+from mlib.file import File
 
 DARK_CSS = '''
 body {

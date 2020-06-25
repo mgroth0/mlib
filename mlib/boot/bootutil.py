@@ -1,9 +1,14 @@
-import sys, os, argparse,platform
+from pathlib import Path
+import sys
+import os
+import argparse
+import platform
 def ismac():
     return platform.system() == 'Darwin'
 def islinux():
     return platform.system() == 'Linux'
 def pwd(): return os.getcwd()
+HOME = str(Path.home())
 LOCAL_CWD = os.getcwd()
 REMOTE_CWD = None
 exceptions = []

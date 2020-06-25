@@ -1,48 +1,68 @@
-def list_reqs():
+from mlib.file import File, strippedlines
 
-    with open('reqs_conda_top.txt', 'r') as f:
-        t = f.read()
-        lines = t.split('\n')
-        lines = list(filter(lambda l: not l.strip() == '', lines))
-        tops = lines
+def metameta():
 
-    reqs = []
-    # with open("reqs_pip.txt", "r") as f:
-    #     for line in f.read().split('\n'):
-    #         if len(line.strip())==0: continue
-    #         reqs.append(line.strip())
-    with open("reqs_conda.txt", "r") as f:
-        for line in f.read().split('\n'):
-            if line.startswith("#"): continue
-            if len(line.strip())==0: continue
-            short = line.strip().split('=')[0]
-            if short not in tops: continue
-            reqs.append(' =='.join(line.strip().split("=")[0:2]))
-    return reqs
-reqs = '\n    - ' + '\n    - '.join(list_reqs()) + '\n'
+    VERSION = '0.0.41'
+    # bumpversion
+    NEW_VERSION = '0.0.'+str(int(VERSION.split('.')[2])+1)
+    File(__file__).write(File(__file__).read().replace(
+        f'{VERSION}', f'{NEW_VERSION}'
+    ))
 
-with open('.bumpversion.cfg','r') as f:
-    t = f.read()
-    for line in t.split('\n'):
-        if line.strip().startswith('current_version'):
-            version = line.split('=')[1].strip()
+    reqs = strippedlines("reqs_conda.txt").filtered(
+        lambda lin: not lin.startswith("#"),
+        lambda lin: lin.split('=')[0] in strippedlines('reqs_conda_top.txt')
+    ).map(
+        lambda lin: ' =='.join(lin.split("=")[0:2])
+    )
 
-with open('meta.yaml','w') as f:
-    f.write('''
-package:
-  name: mlib-mgroth0
-  version: '''+version+'''
-source:
-  path: .
-requirements:
-  build:
-    - python
-    - pip #requires setuptools which reqs wheel
-  run:
-'''+reqs+'''
-# having this section means creating a test env
-# removing this seciton avoids creating a test env completely
-test:
-  imports:
-    - mlib
-''')
+    # version = strippedlines('.bumpversion.cfg').first(
+    #     lambda lin: lin.startswith('current_version')
+    # ).split('=')[1].strip()
+
+    File('meta.yaml').save(dict(
+        package=dict(name='mlib-mgroth0', version=NEW_VERSION),
+        source={'path': '.'},
+        build={'script': 'python -m pip install --no-deps --ignore-installed .'},
+        requirements={
+            'build': [
+                'python',
+                'pip'  # requires setuptools which reqs wheel
+            ],
+            'run'  : reqs.tolist()
+        },
+
+        # having this section means creating a test env
+        # removing this seciton avoids creating a test env completely
+        test={'imports': 'mlib'}
+    ))
+
+    File('setup.py').write(
+        '''
+            
+        import setuptools
+        
+        with open("README.md", "r") as fh:
+            long_description = fh.read()
+        
+        setuptools.setup(
+            name="mlib-mgroth0",
+            version="''' + NEW_VERSION + '''",
+        author="Matt Groth",
+        author_email="mjgroth@mit.edu",
+        description="Matt's lib",
+        long_description=long_description,
+        long_description_content_type="text/markdown",
+        url="https://github.com/mgroth0/mlib",
+        packages=setuptools.find_packages(),
+        classifiers=[
+            "Programming Language :: Python :: 3.8",
+            "License :: OSI Approved :: MIT License",
+            "Operating System :: MacOS :: MacOS X",
+        ],
+        python_requires='>=3.8',
+    )
+    
+        
+    '''
+    )

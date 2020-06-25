@@ -1,13 +1,13 @@
-import setuptools
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
-
-
-
-setuptools.setup(
-    name="mlib-mgroth0",
-    version="0.0.38",
+        
+    import setuptools
+    
+    with open("README.md", "r") as fh:
+        long_description = fh.read()
+    
+    setuptools.setup(
+        name="mlib-mgroth0",
+        version="0.0.41",
     author="Matt Groth",
     author_email="mjgroth@mit.edu",
     description="Matt's lib",
@@ -21,8 +21,6 @@ setuptools.setup(
         "Operating System :: MacOS :: MacOS X",
     ],
     python_requires='>=3.8',
-    # install_requires=list_reqs()
-    # use_incremental=True,
-    # setup_requires=['incremental'],
-    # install_requires=['incremental']  # along with any other install dependencies
 )
+
+    

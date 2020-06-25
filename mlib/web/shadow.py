@@ -12,8 +12,8 @@ from pygments.token import Keyword, Name, Comment, String, Number, Token
 
 from mlib.FigData import makefig
 from mlib.boot.mlog import warn
-from mlib.boot.mutil import File, pwdf, Folder
-from mlib.proj.struct import PROJ
+from mlib.file import File, Folder
+from mlib.proj.struct import Project, pwdf
 from mlib.web.makereport_lib import write_webpage
 from mlib.web.web import HTMLPage, Div, Hyperlink, P, HTMLImage, IMAGE_ROOT_TOKEN, Br
 
@@ -97,7 +97,6 @@ _FORMATTER = CodeHtmlFormatter(
 def uncolor(self, lexer, stream, options):
     for ttype, value in stream:
         if ttype is Token.Name.Function:
-            # breakpoint()
             pass
         elif ttype is Token.Name.Builtin:
             pass
@@ -133,7 +132,7 @@ class Shadow(HTMLPage):
         else:
             mod_file = File(mod_file)
 
-        self.fig_folder = Folder(PROJ.FIGS_FOLDER[
+        self.fig_folder = Folder(Project.FIGS_FOLDER[
                                      mod_file.rel_to(pwdf())
                                  ]).mkdirs()
 
@@ -212,7 +211,7 @@ class Shadow(HTMLPage):
 
 class AutoHTMLImage(HTMLImage):
     def __init__(self, doc_file, *args, **kwargs):
-        doc_file = doc_file.rel_to(PROJ.DOCS_FOLDER)
+        doc_file = doc_file.rel_to(Project.DOCS_FOLDER)
         super().__init__(
             f"{IMAGE_ROOT_TOKEN}/{doc_file}",
             *args, **kwargs)
@@ -229,16 +228,16 @@ def HTMLIndex(*pages):
         ))
     [write_webpage(
         page,
-        PROJ.DOCS_FOLDER,
+        Project.DOCS_FOLDER,
         AutoHTMLImage,
-        PROJ.LOCAL_DOCS_FOLDER
+        Project.LOCAL_DOCS_FOLDER
     ) for page in pages]
 
     return HTMLPage(
         'index',
         *[Hyperlink(page.name, f"{page.name}.html") for page in pages],
-        AutoHTMLImage(PROJ.PYCALL_FILE),
-        AutoHTMLImage(PROJ.PYDEPS_OUTPUT)
+        AutoHTMLImage(Project.PYCALL_FILE),
+        AutoHTMLImage(Project.PYDEPS_OUTPUT)
     )
 
 def build_docs():
@@ -251,7 +250,7 @@ def build_docs():
             index_page.show = False
     write_webpage(
         index_page,
-        PROJ.DOCS_FOLDER,
-        PROJ.GITHUB_LFS_IMAGE_ROOT,
-        PROJ.LOCAL_DOCS_FOLDER
+        Project.DOCS_FOLDER,
+        Project.GITHUB_LFS_IMAGE_ROOT,
+        Project.LOCAL_DOCS_FOLDER
     )

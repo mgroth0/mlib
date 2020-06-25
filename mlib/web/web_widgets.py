@@ -1,6 +1,6 @@
 from mlib.web.web import *
 from mlib.wolf.wolfpy import WOLFRAM
-from mlib.boot.mutil import File
+from mlib.file import File
 
 def FigureTable(*figs_captions, apiURL=None, exp_id=None, editable=False):
     children = []

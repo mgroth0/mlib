@@ -3,12 +3,14 @@ import atexit
 from pycallgraph import PyCallGraph, Config
 from pycallgraph.output import GraphvizOutput
 
-from mlib.boot.mutil import File, shell
+import mlib.file
+from mlib.file import File
+from mlib.shell import shell
 def enable_py_call_graph(output):
     # Makes code about 4 times slower
     DEFAULT_PY_CALL_GRAPH = PyCallGraph(
         output=GraphvizOutput(
-            output_file=output.abspath
+            output_file=mlib.file.abspath
         ),
         config=Config(
             max_depth=2
