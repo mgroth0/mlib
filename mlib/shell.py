@@ -44,6 +44,7 @@ class AbstractShell(ABC):
         self.command_as_str = shell.command_str(*command)
         self.command_as_list = shell.command_list(*command)
         if not silent:
+            breakpoint()
             log(f'$: {self.command_as_str}')
         self.p = self._start()
 

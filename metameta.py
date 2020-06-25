@@ -2,7 +2,7 @@ from mlib.file import File, strippedlines
 
 def metameta():
 
-    VERSION = '0.0.44'
+    VERSION = '0.0.45'
     # bumpversion
     NEW_VERSION = '0.0.'+str(int(VERSION.split('.')[2])+1)
     File(__file__).write(File(__file__).read().replace(
