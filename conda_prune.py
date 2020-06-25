@@ -72,7 +72,7 @@ def conda_prune():
                 elif my_a == 'stop':
                     stp = True
                     break
-                elif a == 'skip':
+                elif my_a == 'skip':
                     skped = True
                 else:
                     err('bad answer')
