@@ -1,5 +1,3 @@
-from pexpect import spawn
-
 from metameta import metameta
 from mlib.boot.bootutil import pwd, HOME
 from mlib.boot.mutil import err
@@ -51,8 +49,12 @@ sh = shell(
 )
 
 sh.interact()
-if sh.p.exitstatus > 0: err('error')
-
+# If you wish to get the exit status of the child you must call the close() method. The exit or signal status of the child will be stored in self.exitstatus or self.signalstatus. If the child exited normally then exitstatus will store the exit return code and signalstatus will be None. If the child was terminated abnormally with a signal then signalstatus will store the signal value and exitstatus will be None:
+sh.close()
+if sh.p.exitstatus is None:
+    err(f'error {sh.p.signalstatus}')
+elif sh.p.exitstatus > 0:
+    err(f'error code {sh.p.exitstatus}')
 spshell(
     '/Users/matt/miniconda3/envs/build/bin/conda-build purge'
 ).print_and_raise_if_err()
