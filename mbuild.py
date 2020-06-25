@@ -27,7 +27,7 @@ my_repo = Repo(pwd())
 assert not my_repo.is_dirty()
 
 from conda_prune import conda_prune
-conda_prune()
+if not conda_prune(): exit(0)
 
 metameta()
 

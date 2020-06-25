@@ -106,3 +106,5 @@ def conda_prune():
     File('reqs_conda_top.txt').write_lines(set(tops))
     File('reqs_conda_sub.txt').write_lines(set(subs))
     File('reqs_conda_cache.json').save(cache)
+
+    return stop
