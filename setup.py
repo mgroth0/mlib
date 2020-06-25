@@ -7,7 +7,7 @@
         
         setuptools.setup(
             name="mlib-mgroth0",
-            version="0.0.43",
+            version="0.0.44",
         author="Matt Groth",
         author_email="mjgroth@mit.edu",
         description="Matt's lib",
