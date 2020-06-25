@@ -14,7 +14,6 @@ import yaml
 from mlib.boot import mlog, log
 from mlib.boot.bootutil import pwd, ismac
 from mlib.boot.mutil import isinstsafe, mypwd, err, isstr, mkdir, listmap, sort, arr, arrmap, notblank
-
 from mlib.shell import ishell
 class File(os.PathLike, MutableMapping):
 
@@ -51,7 +50,6 @@ class File(os.PathLike, MutableMapping):
 
         if w is not None:
             self.write(w)
-
 
         self.rel = os.path.relpath(abspath, pwd())
 
@@ -317,6 +315,9 @@ class File(os.PathLike, MutableMapping):
     def append(self, s):
         with open(self.abspath, "a") as myfile:
             myfile.write(s)
+
+    def write_lines(self, lines, trailing_nl=False):
+        self.write('\n'.join(lines))
 
     def write(self, s):
         import os
