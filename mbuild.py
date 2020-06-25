@@ -26,9 +26,8 @@ from git import Repo
 my_repo = Repo(pwd())
 assert not my_repo.is_dirty()
 
-spshell(
-    f'{HOME}/miniconda3/bin/python conda-prune.py'
-).print_and_raise_if_err()
+from conda_prune import conda_prune
+conda_prune()
 
 metameta()
 
