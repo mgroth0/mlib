@@ -1,6 +1,6 @@
 package:
   name: mlib-mgroth0
-  version: 0.0.42
+  version: 0.0.43
 source:
   path: .
 build:
@@ -11,9 +11,14 @@ requirements:
   - pip
   run:
   - colorama ==0.4.3
+  - gitpython ==3.1.3
   - imageio ==2.8.0
+  - matplotlib ==3.2.2
   - packaging ==20.4
+  - pandas ==1.0.5
   - pexpect ==4.8.0
+  - pycallgraph ==1.0.1
+  - pygments ==2.6.1
   - python ==3.8.3
   - pyyaml ==5.3.1
   - scipy ==1.4.1

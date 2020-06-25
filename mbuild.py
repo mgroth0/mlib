@@ -36,7 +36,7 @@ spshell(
 ).print_and_raise_if_err()
 
 spshell(
-    'git commit -m "auto-commit build cfgs"'
+    ['git', 'commit', '-m', "auto-commit build cfgs"]
 ).print_and_raise_if_err()
 
 spshell(
