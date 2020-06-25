@@ -1,7 +1,10 @@
+from pexpect import spawn
+
 from metameta import metameta
 from mlib.boot.bootutil import pwd, HOME
+from mlib.boot.mutil import err
 from mlib.file import Folder, File
-from mlib.shell import spshell
+from mlib.shell import spshell, shell
 projectFolder = Folder(File(__file__).parentDir)
 
 # for file in projectFolder.glob('*.eeg-info') + projectFolder.glob('build') + projectFolder.glob('dist'):
@@ -43,9 +46,12 @@ spshell(
     'git push'
 ).print_and_raise_if_err()
 
-spshell(
-    '/Users/matt/miniconda3/envs/build/bin/conda-build .'
-).print_and_raise_if_err()
+sh = shell(
+    ['/Users/matt/miniconda3/envs/build/bin/conda-build', pwd()]
+)
+
+sh.interact()
+if sh.p.exitstatus > 0: err('error')
 
 spshell(
     '/Users/matt/miniconda3/envs/build/bin/conda-build purge'

@@ -2,7 +2,7 @@ from mlib.file import File, strippedlines
 
 def metameta():
 
-    VERSION = '0.0.43'
+    VERSION = '0.0.44'
     # bumpversion
     NEW_VERSION = '0.0.'+str(int(VERSION.split('.')[2])+1)
     File(__file__).write(File(__file__).read().replace(
@@ -40,28 +40,28 @@ def metameta():
     File('setup.py').write(
         '''
             
-        import setuptools
-        
-        with open("README.md", "r") as fh:
-            long_description = fh.read()
-        
-        setuptools.setup(
-            name="mlib-mgroth0",
-            version="''' + NEW_VERSION + '''",
-        author="Matt Groth",
-        author_email="mjgroth@mit.edu",
-        description="Matt's lib",
-        long_description=long_description,
-        long_description_content_type="text/markdown",
-        url="https://github.com/mgroth0/mlib",
-        packages=setuptools.find_packages(),
-        classifiers=[
-            "Programming Language :: Python :: 3.8",
-            "License :: OSI Approved :: MIT License",
-            "Operating System :: MacOS :: MacOS X",
-        ],
-        python_requires='>=3.8',
-    )
+import setuptools
+
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+setuptools.setup(
+name="mlib-mgroth0",
+version="''' + NEW_VERSION + '''",
+author="Matt Groth",
+author_email="mjgroth@mit.edu",
+description="Matt's lib",
+long_description=long_description,
+long_description_content_type="text/markdown",
+url="https://github.com/mgroth0/mlib",
+packages=setuptools.find_packages(),
+classifiers=[
+"Programming Language :: Python :: 3.8",
+"License :: OSI Approved :: MIT License",
+"Operating System :: MacOS :: MacOS X",
+],
+python_requires='>=3.8',
+)
     
         
     '''
