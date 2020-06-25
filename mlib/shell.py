@@ -29,7 +29,7 @@ class AbstractShell(ABC):
         elif is_non_str_itr(args[0]):
             return list(map(AbstractShell.com_arg, args[0]))
         elif isstr(args[0]):
-            return listmap(AbstractShell.com_arg,args[0].split(' '))
+            return listmap(AbstractShell.com_arg, args[0].split(' '))
         else:
             return [AbstractShell.com_arg(args[0])]
 
@@ -44,7 +44,6 @@ class AbstractShell(ABC):
         self.command_as_str = shell.command_str(*command)
         self.command_as_list = shell.command_list(*command)
         if not silent:
-            breakpoint()
             log(f'$: {self.command_as_str}')
         self.p = self._start()
 
@@ -79,10 +78,14 @@ class AbstractShell(ABC):
 
 
 class ExpectShell(AbstractShell):
-    def __init__(self, *command, silent=False,
-                 timeout=None,
-                 logfile_read=None):
-        super().__init__(*command, silent)
+    def __init__(
+            self,
+            *command,
+            silent=False,
+            timeout=None,
+            logfile_read=None
+    ):
+        super().__init__(*command, silent=silent)
         self.p.timeout = timeout
         self.p.logfile_read = logfile_read
     def _start(self):
@@ -131,7 +134,7 @@ class SPShell(AbstractShell):
         return '\n'.join(self.readlines())
     def readlines(self):
         (stdout, _) = self.p.communicate()
-        stdout=  utf_decode(stdout)
+        stdout = utf_decode(stdout)
         return stdout.split('\n')
     def readline(self):
         return utf_decode(self.p.stdout.readline())
