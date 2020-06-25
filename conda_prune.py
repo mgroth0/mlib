@@ -15,7 +15,7 @@ def conda_prune():
         if req in checking:
             # handles when a package is a sub twice and recursives
             log(f'already checking {my_req_short}')
-            return
+            return False, False
         stp = skped = False
         checking.append(req)
         log(f'checking: {my_req_short}')
@@ -89,9 +89,9 @@ def conda_prune():
 
     for line in lines:
         if stop: break
-        stop,skp = check(line)
+        stop, skp = check(line)
         if skp:
-            skipped=True
+            skipped = True
 
     for line in lines:
         if stop:
