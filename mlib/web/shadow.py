@@ -10,12 +10,13 @@ from pygments.lexers.python import PythonLexer
 from pygments.style import Style, StyleMeta
 from pygments.token import Keyword, Name, Comment, String, Number, Token
 
-from mlib.FigData import makefig
 from mlib.boot.mlog import warn
-from mlib.file import File, Folder
-from mlib.proj.struct import Project, pwdf
+from mlib.boot.mutil import err
+from mlib.fig.PlotData import makefig
+from mlib.file import File, Folder, pwdf
+from mlib.proj.struct import Project
 from mlib.web.makereport_lib import write_webpage
-from mlib.web.web import HTMLPage, Div, Hyperlink, P, HTMLImage, IMAGE_ROOT_TOKEN, Br
+from mlib.web.web import HTMLPage, Div, Hyperlink, HTML_P, Br, HTMLImage
 
 
 class Dark(Style):
@@ -149,7 +150,7 @@ class Shadow(HTMLPage):
                 if line.strip().startswith('"') or line.strip().startswith("'"):
                     in_docstring = False
                 elif started:
-                    html_objects += [P(line.strip())]
+                    html_objects += [HTML_P(line.strip())]
             elif line.strip().startswith('# DOC:'):
                 command = line.split(':')[1].strip()
                 if command.upper() == 'START':
@@ -161,10 +162,10 @@ class Shadow(HTMLPage):
                 html_objects += [line.strip().replace('#', '', 1).strip()]
             elif started and line.strip().startswith('"'):
                 in_docstring = True
-                html_objects += [P(line.replace('"""', "", 1).strip())]
+                html_objects += [HTML_P(line.replace('"""', "", 1).strip())]
             elif started and line.strip().startswith("'"):
                 in_docstring = True
-                html_objects += [P(line.replace("'''", "", 1).strip())]
+                html_objects += [HTML_P(line.replace("'''", "", 1).strip())]
             elif started:
                 html_objects += [ToHighlight(line)]
         stored_lines = []
@@ -206,15 +207,10 @@ class Shadow(HTMLPage):
         i = 1 + len(self._figs)
         file = self.fig_folder[f'{i}.png']
         self._figs.append(file)
-        makefig(subplots, file=file, show=False)
-        self.add(AutoHTMLImage(file))
+        makefig(subplots, file=file)
+        self.add(HTMLImage(file, fix_abs_path=True))
 
-class AutoHTMLImage(HTMLImage):
-    def __init__(self, doc_file, *args, **kwargs):
-        doc_file = doc_file.rel_to(Project.DOCS_FOLDER)
-        super().__init__(
-            f"{IMAGE_ROOT_TOKEN}/{doc_file}",
-            *args, **kwargs)
+
 
 def HTMLIndex(*pages):
     for page in pages:
@@ -226,18 +222,21 @@ def HTMLIndex(*pages):
             f'{parents}index.html',
             # style='position: fixed; bottom: 0;'
         ))
-    [write_webpage(
-        page,
-        Project.DOCS_FOLDER,
-        AutoHTMLImage,
-        Project.LOCAL_DOCS_FOLDER
-    ) for page in pages]
+    for page in pages:
+        write_webpage(
+            page,
+            Project.DOCS_FOLDER,
+            # AutoHTMLImage, ???
+            err('???'),
+            Project.LOCAL_DOCS_FOLDER
+        )
+        if page.show: Project.LOCAL_DOCS_FOLDER[f'{page.name}.html'].open()
 
     return HTMLPage(
         'index',
         *[Hyperlink(page.name, f"{page.name}.html") for page in pages],
-        AutoHTMLImage(Project.PYCALL_FILE),
-        AutoHTMLImage(Project.PYDEPS_OUTPUT)
+        HTMLImage(Project.PYCALL_FILE, fix_abs_path=True),
+        HTMLImage(Project.PYDEPS_OUTPUT, fix_abs_path=True)
     )
 
 def build_docs():
@@ -249,8 +248,8 @@ def build_docs():
                 warn('cannot currently show multiple pages')
             index_page.show = False
     write_webpage(
-        index_page,
-        Project.DOCS_FOLDER,
-        Project.GITHUB_LFS_IMAGE_ROOT,
-        Project.LOCAL_DOCS_FOLDER
+        htmlDoc=index_page,
+        root=Project.DOCS_FOLDER,
+        resource_root_file=Project.RESOURCES_FOLDER
     )
+    if index_page.show: Project.LOCAL_DOCS_FOLDER[f'{index_page.name}.html'].open()

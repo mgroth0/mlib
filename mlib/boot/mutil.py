@@ -1,114 +1,28 @@
 from abc import ABCMeta
 import asyncio
+from calendar import month_abbr, month_name, mdays
 from collections import UserString
-from functools import wraps
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
 import operator
 import pickle
+from random import choice, randint
+import string
 import sys
 import threading
 # log('mutil imports..')
 from collections.abc import Iterable
-import traceback
-from types import SimpleNamespace
-
+from urllib.parse import urlencode
+import re
 import numpy as np
 from scipy import signal
 from scipy.signal import butter, lfilter
 
-from mlib.boot import mlog
-from mlib.boot.bootutil import pwd, ismac
-from mlib.boot.mlog import log
+from mlib.boot.bootutil import pwd, ismac, isstr, islist, istuple
+from mlib.boot.mlog import log, err
+from mlib.boot.stream import arr, append, arrayfun, listitems, listfilt
+from mlib.term import Progress
 
-def log_invokation(_func=None, *, with_class=False, with_instance=False, with_args=False, with_result=False):
-    def actual_dec(ff):
-        @wraps(ff)
-        def fff(*args, **kwargs):
-            ags = '' if not with_args else f'{args=}{kwargs=}'
-            inst = '' if not with_instance else f' of {args[0]}'
-            cls = '' if not with_class else f'{cn(ags[0])}.'
-            s = f'{cls}.{ff.__name__}(){inst}'
-            log(f'Invoking {s}...', ref=1)
-            result = ff(*args, **kwargs)
-            r_str = '' if not with_result else f' ({result=})'
-            log(f'Finished {s}!{r_str}', ref=1)
-            return result
-        return fff
-
-    if _func is None:
-        # called with args. return the ACTUAL decoration
-        return actual_dec
-    else:
-        # called with no args (_func magically added as first arg). This IS the decoration
-        return actual_dec(_func)
-
-from colorama import Fore, Style
-
-def greens(s): return f'{Fore.GREEN}{s}{Style.RESET_ALL}'
-def reds(s): return f'{Fore.RED}{s}{Style.RESET_ALL}'
-def lreds(s): return f'{Fore.LIGHTRED_EX}{s}{Style.RESET_ALL}'
-def blues(s): return f'{Fore.BLUE}{s}{Style.RESET_ALL}'
-def yellows(s): return f'{Fore.YELLOW}{s}{Style.RESET_ALL}'
-def magentas(s): return f'{Fore.MAGENTA}{s}{Style.RESET_ALL}'
-def cyans(s): return f'{Fore.CYAN}{s}{Style.RESET_ALL}'
-
-
-class Progress:
-    erase = '\x1b[1A\x1b[2K'
-
-    _instances = []
-    def __init__(self, goal, verb='doing', pnoun='things'):
-        self.last = 0
-        self.goal = goal
-        self._internal_n = 1
-        log(f'{verb} $ {pnoun}', f'{goal:,}')
-        self._instances += [self]
-        self.entered = False
-
-    def __enter__(self):
-        self.entered = True
-        return self
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._instances.remove(self)
-
-    # PROG_CHAR = '|'
-    PROG_CHAR = greens('▮')
-    @staticmethod
-    def prog_bar(n, d=100, BAR_LENGTH=50):
-        progress = round((n / d) * 100)
-        s = '['
-        for x in range(BAR_LENGTH):
-            if progress >= x * (100 / BAR_LENGTH):
-                s += Progress.PROG_CHAR
-            else:
-                s += ' '
-        s += f']'
-        return s
-
-    def print(self, logfile=True):
-        assert self.entered
-        progress = round((self._internal_n / self.goal) * 100)
-        if progress > self.last:
-            self.last = progress
-            bar = self.prog_bar(self._internal_n, self.goal)
-            s = f'Progress: {bar} {progress}%'
-            if progress == 100:
-                print(s)
-            else:
-                print(f'{s}\r', end="")
-
-            if logfile:
-                log('$%', progress, silent=True)
-
-    # noinspection PyUnusedLocal
-    def tick(self, n=None, logfile=True):
-        if n is None:
-            self.tick(self._internal_n)
-            self._internal_n += 1
-        else:
-            self._internal_n = n
-            self.print()
 
 def assert_int(f):
     if not float(f).is_integer():
@@ -131,7 +45,8 @@ def py():
         return '/home/matt/miniconda3/bin/python3'
 
 def prep_log_file(name, new=False):
-    mlog.prep_log_file(name, new=new)
+    from mlib.proj.struct import Project
+    Project.prep_log_file(name, new=new)
 
 
 
@@ -199,25 +114,6 @@ def vers(s):
 
 
 
-def cn(o): return o.__class__.__name__
-
-
-def struct():
-    return SimpleNamespace()
-
-class MException(Exception): pass
-
-def TODO():
-    trace = traceback.extract_stack()[-2]
-    fun_todo = trace[0]
-    line = trace[1]
-    return err(f'\n\n\t\t--TODO--\nFile "{fun_todo}", line {line}')
-
-# log('mutil imports done')
-def err(s, exc_class=MException):
-    log(f'err:{s}')
-    raise exc_class(s)
-
 def min2sec(m): return float(m) * 60
 
 
@@ -252,8 +148,8 @@ def mypwd(remote=None):
         else:
             return '/Users/matt'
 
-def listkeys(d):
-    return list(d.keys())
+def listkeys(d): return list(d.keys())
+def listvalues(d): return list(d.values())
 
 def utf_decode(s, nonesafe=False):
     if nonesafe and s is None:
@@ -266,16 +162,7 @@ def arg_str(o):
         return '1' if o else '0'
     else: return str(o)
 
-def listfilt(fun, ll):
-    return list(filter(fun, ll))
-def arrfilt(fun, ll): return arr(listfilt(fun, ll))
-def strs(ll): return listmap(str, ll)
-def listmap(fun, ll):
-    return list(map(fun, ll))
-def arrmap(fun, ll): return arr(listmap(fun, ll))
 
-
-def listitems(d): return list(d.items())
 
 # works, but causes intelliJ warnings due to unresolved references
 class Attributed:
@@ -283,8 +170,7 @@ class Attributed:
         for k, v in listitems(kwargs):
             self.__setattr__(k, v)
 
-def ziplist(*args):
-    return list(zip(*args))
+
 
 def do_twice(func):
     def wrapper_do_twice(*args, **kwargs):
@@ -430,8 +316,7 @@ def difffun(lamb, l):
         last_e = e
     return diffs
 
-def arrayfun(lamb, l):
-    return arr(list(map(lamb, l)))
+
 
 def catfun(lamb, l, ax=0):
     return np.concatenate(tuple(list(map(lamb, l))), axis=ax)
@@ -579,7 +464,9 @@ def maxindex(li):
     return np.argmax(li)
 
 def numel(aaa):
-    return aaa.size
+    if isstr(aaa) or istuple(aaa): return len(aaa)
+    elif islist(aaa): return arr(aaa).size
+    else: return aaa.size
 
 def randperm(iii):
     return np.random.permutation(iii)
@@ -731,27 +618,13 @@ def nanmean(lll):
     # noinspection PyUnboundLocalVariable
     return rrr
 
-def all_superclasses(clazz):
-    li = []
-    for b in clazz.__bases__:
-        li.extend([b] + all_superclasses(b))
-    return li
-
-def isinstsafe(o, c):
-    return isinstance(o, c) or c in all_superclasses(o.__class__)
 
 def sqrt(l):
     return np.sqrt(l)
 
-def isint(v):
-    return isinstance(v, int) or isinstance(v, np.int64)
 
-def isstr(v):
-    return isinstance(v, str)
 
 def flat(l): return arr(l).flatten()
-
-flatn = lambda l: arr([item for sublist in l for item in sublist])
 
 # def append
 
@@ -799,7 +672,10 @@ def make2d(v):
 def col(ar):
     return arr(ar).transpose()
 
-import re
+def sorted_by(l1, l2):
+    return [x for _, x in sorted(zip(l2, l1))]
+
+
 def sort_human(li, keyparam=lambda e: e):
     convert = lambda text: float(text) if text.isdigit() else text
     alphanum = lambda key: [convert(c) for c in re.split(
@@ -823,6 +699,7 @@ def sort_human(li, keyparam=lambda e: e):
             the_li = the_li[0]
         return the_li
 
+    orig_li = li  # debug
     li = arr(li).tolist()
     # noinspection PyUnresolvedReferences
     li.sort(key=lambda e: alphanum_join(get_first_e(keyparam(e))))
@@ -965,32 +842,7 @@ def xcorr(x, y, Fs, lagSecs=30):
 
     return ccc, mx, mn, mx_latency_secs, mn_latency_secs
 
-class mparray(np.ndarray):
-    def __new__(cls, input_array, dtype=None):
-        # Input array is an already formed ndarray instance
-        # We first cast to be our class type
-        if dtype is not None:
-            obj = np.asarray(input_array, dtype=dtype).view(cls)
-        else:
-            obj = np.asarray(input_array).view(cls)
-        # add the new attribute to the created instance
-        # Finally, we must return the newly created object:
-        return obj
 
-    # noinspection PyMethodMayBeStatic
-    def __array_finalize__(self, obj):
-        # see InfoArray.__array_finalize__ for comments
-        if obj is None: return
-
-    def filtered(self, *tests):
-        return arr(filtered(self, *tests))
-    def first(self, *tests):
-        return filtered(self, *tests)[0]
-    def map(self, fun):
-        return arr(listmap(fun, self))
-
-    def join(self, s):
-        return s.join(self.tolist())
 
 def arr2d(v=(), dtype=None):
     return make2d(arr(v, dtype))
@@ -1022,6 +874,14 @@ def isreal(n):
         return False
     return np.isreal(n)
 
+def minreal(*nums):
+    nums = listfilt(lambda x: isreal(x), nums)
+    if len(nums) > 0:
+        return min(nums)
+def maxreal(*nums):
+    nums = listfilt(lambda x: isreal(x), nums)
+    if len(nums) > 0:
+        return max(nums)
 def fix_index(i):
     if isinstance(i, slice):
         pass
@@ -1035,10 +895,7 @@ def inc(a, i):
     a[fix_index(i)] += 1
 
 
-def arr(v=(), dtype=None):
-    if not isinstance(v, Iterable):
-        v = [v]
-    return mparray(v, dtype=dtype)
+
 
 def isinf(v):
     if v is None:
@@ -1053,8 +910,7 @@ def invert(v):
 def bitwise_and(a, b):
     return arr(np.bitwise_and(a, b))
 
-def append(l, v):
-    return arr(np.append(l, v))
+
 
 def simple_downsample(aa, ds):
     bb = arr()
@@ -1103,19 +959,27 @@ def concat(*args, axis=0):
             args[idx] = arr([aa])
     return arr(np.concatenate(tuple(args), axis=axis))
 
+
 def isblank(s):
     return len(s.replace(' ', '').replace('\t', '').replace('\n', '').replace('\r', '')) == 0
 def notblank(s): return not isblank(s)
+def isblankstr(s): return isstr(s) and isblank(s)
 
-def isempty(a):
-    if isinstance(a, np.ndarray):
-        empty = False
-        for i in itr(a.shape):
-            if a.shape[i] < 1:
-                empty = True
-        return empty
-    else:
-        return len(a) == 0
+
+
+
+
+
+
+def isempty(a): return numel(a) == 0
+# if isinstance(a, np.ndarray):
+#     empty = False
+#     for i in itr(a.shape):
+#         if a.shape[i] < 1:
+#             empty = True
+#     return empty
+# else:
+#     return len(a) == 0
 
 def contains(ss, s):
     return s in ss
@@ -1162,8 +1026,12 @@ def functionalize(f):
     def ff(): return f
     return ff
 
-
+# no point of this. just instantiate under the class def. Would be nice if I could use a decorate, but IDE doesn't understand it whereas it does understand the instantiation underneath
 def singleton(cls): return cls()
+
+
+
+
 def run(cls): cls().run()
 
 class Runner(ABCMeta):
@@ -1178,21 +1046,74 @@ class Runner(ABCMeta):
             cls().super_run()
             return None
 
-# done know if this works or is useful. idea from fn.py
-@singleton
-class __:
-    def __getattr__(self, item):
-        return lambda x: x.__getattribute__(item)
+
 
 # idea is that it could auto format on edits but not sure how to implement this. example: trailing newlines or strip
 class FormattedString(UserString):
     pass
 
-def filtered(lis, *tests):
-    r = []
-    for item in lis:
-        add = True
-        for test in tests:
-            if not test(item): add = False
-        if add: r += [item]
-    return r
+
+# overlap should be at the end of s1 and beginning of s2
+# @log_invokation
+def merge_overlapping(s1, s2):
+    final = None
+    for i in range(1, len(s1)):
+        substr = s1[-i:]
+        if substr in s2:
+            final = substr
+        else:
+            break
+    assert i >= 1
+    assert final is not None, f'could not merge:{s1=}{s2=}'
+    return s1.replace(final, '') + s2
+
+
+def de_quote(s):
+    err('consider using eval to also fix escaped characters')
+    return s[1:-1]
+
+def query_url(url, arg_dict): return f'{url}?{urlencode(arg_dict)}'
+
+
+def gen_password():
+    # import string
+    # from random import *
+    characters = string.ascii_letters + string.punctuation + string.digits
+    password = "".join(choice(characters) for x in range(randint(8, 16)))
+    password = password.replace('\\', '/') #wolfram hated the \ character and thought it was some weird escape sequence
+    return password
+
+def months(): return [month_name[i] for i in range(1, 13)]
+def non_leap_days_in_months(): return [mdays[i] for i in range(1, 13)]
+
+def boolinput(q):
+    from mlib.proj.struct import Project
+    if Project.INPUT_FILE.exists:
+        for line in Project.INPUT_FILE.readlines():
+            p = line.split('=')[0]
+            if q.startswith(p):
+                return bool(line.split('=')[1].strip())
+    a = ''
+    while a.upper() not in ['Y', 'N']:
+        a = input(f'{q}? (y/n) > ').upper()
+    return a == 'Y'
+def strinput(q, choices):
+    from mlib.proj.struct import Project
+    if Project.INPUT_FILE.exists:
+        lines = Project.INPUT_FILE.readlines()
+        for line in lines:
+            p = line.split('=')[0]
+            if q.startswith(p):
+                a = line.split('=')[1].strip()
+                assert a in choices
+                return a
+    a = None
+    while a not in choices:
+        a = input(f'{q}? ({"/".join(choices)}) > ')
+    return a
+
+class StringExtension(UserString):
+    def afterfirst(self, c):
+        return StringExtension(self.split(c, 1)[1])
+    def beforefirst(self, c):
+        return StringExtension(self.split(c, 1)[0])

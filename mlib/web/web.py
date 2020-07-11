@@ -1,43 +1,16 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+import os
 
-from mlib.boot.mutil import isstr, log_invokation
+from mlib.boot.bootutil import isinstsafe, isdictsafe
+from mlib.boot.mlog import err
+from mlib.boot.mutil import isstr, listkeys, isblankstr, merge_overlapping
+from mlib.boot.stream import listitems, listmap
 from mlib.file import File
+from mlib.web.js import JS
 
-DARK_CSS = '''
-body {
-    background:black;
-    color: white;
-}
- .center {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  width: 50%;
-  text-align: center;
-}
-.pixel {
-    image-rendering: optimizeSpeed;             /* Older versions of FF */
-    image-rendering: -moz-crisp-edges;          /* FF 6.0+ */
-    image-rendering: -webkit-optimize-contrast; /* Webkit (non standard naming) */
-    image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
-    image-rendering: crisp-edges;               /* Possible future browsers. */
-    -ms-interpolation-mode: nearest-neighbor;   /* IE (non standard naming) */
-}
-.textcell {
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-}
-.parentcell {
-position:relative;
-width:100%;
-}
-'''
-
-
+# Gutter icon linking to dark.css from ide-scripting would do well here
+DARK_CSS = File(__file__).parent['dark.css'].read()
 
 class HTMLPage:
     def __init__(
@@ -46,263 +19,309 @@ class HTMLPage:
             *children,
             # stylesheet=DARK_CSS.name,
             stylesheet=DARK_CSS,
+            style='',
             js='',
-            show=False
+            show=False,
+            jQuery=True,
+            bodyStyle=None,
+            bodyAttributes=None,
+            identified=None
     ):
+        if identified is None: identified = {}
+        if bodyAttributes is None: bodyAttributes = {}
+        if bodyStyle is None: bodyStyle = {}
         self.name = name
         self.children = list(children)
         self.stylesheet = stylesheet
-        self.js = js
+        self.style = style
         self.show = show
+        self.jQuery = jQuery
+        self.js = js
+        self.bodyStyle = bodyStyle
+        self.bodyAttributes = bodyAttributes
+        self.identified = identified
 
 
 
+    def prepend(self, child): self.children.insert(0, child)
     def add(self, child): self.children.append(child)
 
-
-
-
-    @log_invokation()
-    def getCode(self):
+    def getCode(
+            self,
+            resource_root,
+            resource_root_rel
+    ):
         ml = '<!DOCTYPE html>'
-        ml += '<html>'
-        ml += '<head>'
-        ml += '<link rel="stylesheet" href="'
-        ml += 'style.css'
-        # ml += self.stylesheet
-        ml += '">'
-        ml += """
-        
-        <script>
-        """
-        # probably from syntax highlight injection
-        ml += self.js.replace('\u200b', '')
-        ml += """
-        </script>
-        
-        """
-        ml += '</head>'
-        ml += HTMLBody(*self.children).getCode()
-        ml += '</html>'
+
+        # with Temp('temp.css') as f:
+        #     f.write(self.style)
+        head_objs = [
+            '''<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">''',
+            '<META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">',
+            HTMLCSSLink(href='style.css'),
+            # StyleTag(lesscpy.compile(f.abspath, minify=True))
+        ]
+
+        if self.jQuery:
+            head_objs.extend([
+                ExternalScript(
+                    src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+                ),
+                ExternalScript(src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"),
+                HTMLCSSLink(
+                    href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css")
+            ])
+
+        # head_objs.append(ExternalScript(
+        # Blocked loading mixed active content
+        #     src='http://cdn.jsdelivr.net/gh/bestiejs/platform.js/platform.js',
+        # ))
+        head_objs.extend(
+            [
+                ExternalScript(src='platform.js'),
+                ExternalScript(src='mlib.js'),
+                JScript(JS(self.js))
+            ]
+        )
+        columnChildren = []
+        for c in self.children:
+            columnChildren.append(c)
+            if isstr(c) or 'hidden' not in listkeys(c.attributes):
+                columnChildren.append(Br)
+        if columnChildren and columnChildren[-1] == Br:
+            columnChildren = columnChildren[:-1]
+
+        ml += HTMLRoot(
+            HTMLHead(*head_objs),
+            HTMLBody(
+                *columnChildren,
+                style=self.bodyStyle,
+                **self.bodyAttributes,
+                identified=self.identified
+            ).getCode(resource_root, resource_root_rel)
+        ).getCode(resource_root, resource_root_rel)
+
         return ml
+
+
 
 class HTMLObject(ABC):
-    def __init__(self, style='', clazz='', idd=None):
-        self.style = style
-        self.clazz = clazz
-        self.id = idd
+    # *args is unused for now, a placeholder
+    def __init__(self, *args, **attributes):
+        for k, v in listitems(attributes):
+            if k == 'style' and isdictsafe(v):
+                attributes[k] = CSS_Style_Attribute(**v)
+        self.attributes = attributes
     @staticmethod
     @abstractmethod
-    def tag():
-        pass
-
+    def tag(): pass
     @abstractmethod
-    def contents(self):
-        pass
+    def contents(self, root_path, resource_root_rel): pass
+    def _attributes(self, resource_root_path, resource_root_rel):
+        a = ''
+        for k, v in self.attributes.items():
+            if k in ['onclick', 'onchange', 'onmouseover', 'onmouseout', 'onkeydown', 'onload']:
+                err('JS pipeline not prepared for html even handlers')
 
-    @abstractmethod
-    def attributes(self):
-        pass
-
-    def _attributes(self):
-        atts = self.attributes()
-        if self.id is not None:
-            atts = atts + ' id="' + self.id + '"'
-        if atts:
-            return ' ' + atts
-        else:
-            return ''
-
+            if v is None:
+                a += f' {k}'
+            elif isinstsafe(v, CSS_Style_Attribute):
+                a += f' {k}="{repr(v)}"'
+            elif isinstance(v, MagicLink.TempAbsPath) or not isblankstr(v):
+                if isinstance(v, MagicLink.TempAbsPath):
+                    v = merge_overlapping(resource_root_path, v.abs)
+                elif isinstance(v, MagicLink.TempRelToResPath):
+                    v = os.path.join(resource_root_rel, v.rel)
+                a += f' {k}="{v}"'
+        return a
     @staticmethod
     @abstractmethod
-    def closingTag():
-        pass
-
-    def _class(self):
-        if self.clazz:
-            return ' class="' + self.clazz + '"'
-        else:
-            return ''
-
-    def _style(self):
-        if self.style:
-            return ' style="' + self.style + '"'
-        else:
-            return ''
-
-    def getCode(
-            self):
-        return '<' + self.tag() + self._class() + self._style() + self._attributes() + '>' + self.contents() + self.closingTag()
-
-class HTMLParent(HTMLObject):
+    def closingTag(): pass
+    def getCode(self, root_path, resource_root_rel):
+        return f'<{self.tag}{self._attributes(root_path, resource_root_rel)}>{self.contents(root_path, resource_root_rel)}{self.closingTag()}'
+class HTMLParent(HTMLObject, ABC):
     def __init__(self, *args, **kwargs):
-        super(HTMLParent, self).__init__(**kwargs)
-        self.objs = args
-
-    def closingTag(self):
-        return '</' + self.tag() + '>'
-
-    @staticmethod
-    @abstractmethod
-    def sep():
-        pass
-
-    def contents(self):
+        objs = list(args)
+        if 'identified' in kwargs:
+            identified = kwargs['identified']
+            del kwargs['identified']
+            for id, ided in listitems(identified):
+                ided.attributes['id'] = id
+                objs.append(ided)
+        super().__init__(**kwargs)
+        self.objs = objs
+    def closingTag(self): return f'</{self.tag}>'
+    def contents(self, resource_root_path, resource_root_rel):
         ml = ''
-        for o in self.objs:
-            if isstr(o):
-                ml += o
-            else:
-                ml += o.getCode()
-            if isstr(o) or 'hidden' not in o.attributes():
-                ml += self.sep()
+        for o in self.objs: ml += o if isstr(o) else o.getCode(resource_root_path, resource_root_rel)
         return ml
 
-class HTMLContainer(HTMLParent):
-    def attributes(self): return ''
-    @staticmethod
-    def tag(): return 'container'
-    @staticmethod
-    def sep(): return ''
+    def extended(self, *objs):
+        self.objs.extend(objs)
+        return self
+class HTMLChild(HTMLObject, ABC):
+    def contents(self, resource_root, resource_root_rel): return ''
+    def closingTag(self): return ''
 
-class HTMLVar(HTMLParent):
-    def __init__(self, idd, var):
-        super(HTMLVar, self).__init__(var, id=idd)
-    def attributes(self): return 'hidden'
-    @staticmethod
-    def tag(): return 'p'
-    @staticmethod
-    def sep(): return ''
+class HTMLContainer(HTMLParent):
+    tag = 'container'
+
+
 
 class HTMLBody(HTMLParent):
-    def attributes(self): return ''
-    @staticmethod
-    def tag(): return 'body'
-    @staticmethod
-    def sep(): return '<br>'
-
-
+    tag = 'body'
+class HTMLHead(HTMLParent):
+    tag = 'head'
+class HTMLCSSLink(HTMLChild):
+    def __init__(self, href):
+        super().__init__(href=href, rel="stylesheet")
+    tag = 'link'
+class HTMLRoot(HTMLParent):
+    def __init__(self, head, body):
+        super().__init__(head, body)
+    tag = 'html'
 
 class Div(HTMLParent):
-    def attributes(self): return ''
-    @staticmethod
-    def tag(): return 'div'
-    @staticmethod
-    def sep(): return ''
+    tag = 'div'
 
 class Span(HTMLParent):
-    def attributes(self): return ''
-    @staticmethod
-    def tag(): return 'span'
-    @staticmethod
-    def sep(): return ''
+    tag = 'span'
 
 class Table(HTMLParent):
-    def attributes(self): return ''
-    @staticmethod
-    def tag(): return 'table'
-    @staticmethod
-    def sep(): return ''
+    tag = 'table'
 
 class TableRow(HTMLParent):
-    def attributes(self): return ''
-    @staticmethod
-    def tag(): return 'tr'
-    @staticmethod
-    def sep(): return ''
+    tag = 'tr'
 
 class DataCell(HTMLParent):
-    def attributes(self): return ''
-    @staticmethod
-    def tag(): return 'td'
-    @staticmethod
-    def sep(): return ''
+    tag = 'td'
 
-class P(HTMLParent):
-    def attributes(self): return ''
-    @staticmethod
-    def tag(): return 'p'
-    @staticmethod
-    def sep(): return ''
+class HTML_P(HTMLParent):
+    tag = 'p'
+
+class HTMLSelect(HTMLParent):
+    def __init__(self, values, *objs, **kwargs):
+        super().__init__(*listmap(HTMLOption, values), *objs, **kwargs)
+    tag = 'select'
+
+class HTMLOption(HTMLParent):
+    def __init__(self, value, *args, **kwargs):
+        super().__init__(str(value), *args, value=value, **kwargs)
+    tag = 'option'
+
+class HTMLButton(HTMLParent):
+    tag = 'button'
+
+class StyleTag(HTMLParent):
+    tag = 'style'
 
 class TextArea(HTMLParent):
     def __init__(self, text='', **kwargs):
-        super(TextArea, self).__init__(text, **kwargs)
-        self.text = text
-    def attributes(self): return ''
-    @staticmethod
-    def tag(): return 'textarea'
-    @staticmethod
-    def sep(): return ''
+        super().__init__(text, **kwargs)
+    tag = 'textarea'
 
-class Hyperlink(HTMLParent):
-    def __init__(self, label, url, *args, **kwargs):
-        super().__init__(label, *args, **kwargs)
-        self.url = url
-    @staticmethod
-    def tag(): return 'a'
-    @staticmethod
-    def sep(): return ''
-    def attributes(self): return f'href="{self.url}"'
-
-class HTMLLabel(HTMLParent):
-    def __init__(self, label, forr, *args, **kwargs):
-        super().__init__(label, *args, **kwargs)
-        self.forr = forr
-    @staticmethod
-    def tag(): return 'label'
-    @staticmethod
-    def sep(): return ''
-    def attributes(self): return f'for="{self.forr}"'
-
-class HTMLFigure(HTMLParent):
+class HTMLForm(HTMLParent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-    @staticmethod
-    def tag(): return 'figure'
-    @staticmethod
-    def sep(): return ''
-    def attributes(self): return ''
+    tag = 'form'
+class HTMLInput(HTMLChild):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+    tag = 'input'
+class HTMLInputSubmit(HTMLInput):
+    def __init__(self, text, **kwargs):
+        super().__init__(type="submit", value=text, **kwargs)
+class HTMLDateInput(HTMLInput):
+    def __init__(self, **kwargs):
+        err('html date input doesnt work natively on safari and gets messy. make your own with Select')
+        super().__init__(type="date", **kwargs)
+
+class HTMLLabel(HTMLParent):
+    def __init__(self, text, forr, *args, **kwargs):
+        super().__init__(text, *args, **kwargs, **{'for': forr})
+    tag = 'label'
+
+class HTMLFigure(HTMLParent):
+    tag = 'figure'
 
 class HTMLFigCaption(HTMLParent):
     def __init__(self, label, *args, **kwargs):
         super().__init__(label, *args, **kwargs)
-        self.label = label
-    @staticmethod
-    def tag(): return 'figcaption'
-    @staticmethod
-    def sep(): return ''
-    def attributes(self): return ''
-
-class HTMLChild(HTMLObject, ABC):
-    def contents(self): return ''
-    def closingTag(self): return ''
+    tag = 'figcaption'
 
 class _Br(HTMLChild):
-    @staticmethod
-    def tag():
-        return 'br'
-    def attributes(self):
-        return ''
+    tag = 'br'
 Br = _Br()
 
 
 
-class HTMLImage(HTMLChild):
-    def __init__(self, url, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class MagicLink:
+    @dataclass
+    class TempAbsPath:
+        abs: str
+        def __post_init__(self):
+            if isinstsafe(self.abs, File):
+                self.abs = self.abs.abspath
+    @dataclass
+    class TempRelToResPath:
+        rel: str
+
+class Hyperlink(HTMLParent, MagicLink):
+    def __init__(self, label, url, *args, fix_path=False, **kwargs):
+        if fix_path: url = self.TempAbsPath(url)
+        super().__init__(label, *args, **kwargs, href=url)
+    tag = 'a'
+class HTMLImage(HTMLChild, MagicLink):
+    def __init__(self, url, *args, fix_abs_path=False, fix_rel_to_res=False, **kwargs):
+        assert not (fix_abs_path and fix_rel_to_res)
+
+        if fix_abs_path: url = self.TempAbsPath(url)
+        elif fix_rel_to_res: url = self.TempRelToResPath(url)
+
+        super().__init__(*args, **kwargs, src=url, alt='an image', width=500)
         self.url = url
-    @staticmethod
-    def tag(): return 'img'
-    def attributes(self): return f'src="{self.url}" alt="an image" width="500"'
-IMAGE_ROOT_TOKEN = "IMAGE_ROOT"
+    tag = 'img'
 
 
 class HTMLProgress(HTMLChild):
     def __init__(self, value, maxx, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.value = value
-        self.maxx = maxx
-    @staticmethod
-    def tag(): return 'progress'
-    def attributes(self): return f'value="{self.value}" max="{self.maxx}"'
+        super().__init__(*args, **kwargs, value=value, max=maxx)
+    tag = 'progress'
+
+class Script(HTMLParent, ABC):
+    tag = 'script'
+class JScript(Script):
+    def __init__(self, js: JS, *args, **kwargs):
+        assert isinstsafe(js, JS)
+        super().__init__(f'\n{js.output()}\n', *args, **kwargs)
+class ExternalScript(Script):
+    def __init__(self, src: str, *args, **kwargs):
+        super().__init__(*args, src=src, **kwargs)
+
+class CSS_Style_Attribute:
+    def __init__(self, **kwargs):
+        self._style = kwargs
+    def __repr__(self):
+        s = ''
+        for k, v in listitems(self._style):
+            s += f'{k}: {v}; '
+        return s
+
+
+        # Hyperlink(
+        #     label="Click here to automatically open a pre-filled email",
+        #     url=f"mailto:mjgroth@mit.edu,dsinha@bbns.org?subject=SymTest{urllib.parse.quote(THIS_VERSION[0])}&",
+        #     **{'class': 'center'},
+        #     id='link',
+        #     style={'display': 'none'}
+        # ),
+
+def arg_tags(**kwargs):
+    return Div(
+        *[HTML_P(
+            str(v),
+            id=str(k),
+        ) for k, v in listitems(kwargs)],
+        style={'display': 'none'}
+    )

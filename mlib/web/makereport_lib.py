@@ -1,72 +1,115 @@
-# **** upload URLs will need to not be static since apparently wolfram can't really handle uploads to the same url over and over. but redirects can be used, and make different kinds of cloud objects too
+import os
 
-from wolframclient.language import wl
-
-from mlib.boot.mlog import log
-from mlib.boot.mutil import log_invokation
-from mlib.proj.struct import pwdf
-from mlib.file import File, Folder, Temp
-from mlib.shell import shell
-from mlib.web.web import IMAGE_ROOT_TOKEN
-from mlib.wolf.wolfpy import WOLFRAM
-
-def update_report(new_url, pub_url):
-    co = WOLFRAM.cloud_deploy(wl.HTTPRedirect(new_url), url=pub_url, public=True)
-    log(f'finished deploying redirect:{co[0]}')
-
-RESOURCES_ROOT = "https://www.wolframcloud.com/obj/mjgroth/Resources/"
-
-@log_invokation(with_args=True, with_result=True)
-def upload_wolf_webpage(htmlDoc, wolfFolder, permissions='Private', resource_folder=None, DEV=False):
-    if DEV:
-        wolfFolder = 'Dev/' + wolfFolder
-    with Temp('temp.html', w=htmlDoc.getCode()) as t:
-        co = WOLFRAM.copy_file(t, f'{wolfFolder}/index.html', permissions=permissions)
-    with Temp('temp.css', w=htmlDoc.stylesheet) as t:
-        WOLFRAM.copy_file(t, f'{wolfFolder}/style.css', permissions=permissions)
-    if resource_folder is not None:
-        WOLFRAM.copy_file(resource_folder, f'Resources/{wolfFolder}', permissions=permissions)
-    return co[0]
-
-
-
-# REMOTE_ROOT = ''.join(shell('git config --get remote.origin.url').readlines()) + '/blob/master/'
-
-@log_invokation(with_args=True, with_result=True)
+from mlib.boot import log
+from mlib.file import url, pwdf, File
+from mlib.proj.struct import Project
+from mlib.term import greens, MagicTermLineLogger
+# @log_invokation(with_args=True)
+from mlib.web.web import HTMLPage, Table, Script, TextArea, HTML_P, DataCell, HTMLImage, TableRow
 def write_webpage(
-        htmlDoc,
-        docs_folder,
-        image_root,
-        local_docs_folder
+        htmlDoc: HTMLPage,
+        root,
+        resource_root_file,
+        upload_resources=True,
+        WOLFRAM=False,
+        DEV=False,
+
 ):
-    pwdname = pwdf().name
+    resource_root_rel = File(resource_root_file).rel_to(root)
 
-    web_resources_root = f'{image_root}{pwdname}/master/{docs_folder.name}'
+    # assert not (resource_root_file and upload_resources)
+    # resource_root_url = resource_root_file if isstr(resource_root_file) else resource_root_file.wcurl
+    # resource_root_url_local = resource_root_file if isstr(resource_root_file) else resource_root_file.wcurl
+    r = f'\n~~Created Webpage: {htmlDoc.name}~~\n'
+    title = r
+    if WOLFRAM:
+        if upload_resources:
+            resource_root_file.wc.push_public()
+        if DEV:
+            root.edition_wolf_dev.make_webpage(htmlDoc, resource_root_file.wcurl, resource_root_rel)
+            root.edition_wolf_dev.wc.push()
+            r += f'\tPrivate:{root.edition_wolf_dev.wcurl}\n'
+        else:
+            root.edition_wolf_pub.make_webpage(htmlDoc, resource_root_file.wcurl, resource_root_rel)
+            root.edition_wolf_pub.wc.push_public()
+            r += f'\tPublic:{root.edition_wolf_pub.wcurl}\n'
 
-    docs_folder.mkdir()
-    page_file = docs_folder[f'{htmlDoc.name}.html']
-    page_parent = Folder(File(page_file).parentDir)
+    root.edition_git.make_webpage(
+        htmlDoc,
+        os.path.join(Project.GITHUB_LFS_IMAGE_ROOT, resource_root_file.rel_to(pwdf())),
+        resource_root_rel
+    )
 
-    page_file.write(htmlDoc.getCode().replace(IMAGE_ROOT_TOKEN, web_resources_root))
+    r += f'\tFor GitHub:{root.edition_git.url}\n'
 
-    page_parent['style.css'].write(htmlDoc.stylesheet)
+    root.edition_local.make_webpage(htmlDoc, url(resource_root_file), resource_root_rel)
 
-    local_docs_folder.mkdir()
-    local_page_file = File(local_docs_folder[f'{htmlDoc.name}.html'])
-    local_page_parent = Folder(local_page_file.parentDir)
-    local_page_file.write(htmlDoc.getCode().replace(
-        IMAGE_ROOT_TOKEN,
-        File(docs_folder).url()
-    ))
-    local_page_parent['style.css'].write(htmlDoc.stylesheet)
-    if htmlDoc.show:
-        local_page_file.open()
-    return local_page_file
+    r += f'\tLocal:{root.edition_local.url}/index.html\n'
 
-@log_invokation()
-def push_docs():
-    shell('git reset').interact()
-    shell('git add docs').interact()
-    shell('git commit docs -m "auto-gen docs"').interact()
-    shell('git push').interact()
+    r += '~' * (len(title) - 2)
 
+    print(greens(r))
+
+
+
+
+def FigureTable(*figs_captions, resources_root=None, exp_id=None, editable=False):
+    children = [Script(js='''hotElements=[]''')]
+    my_stacker = MagicTermLineLogger(FigureTable)
+    for fig, caption in figs_captions:
+        fig = File(fig).copy_into(resources_root, overwrite=True)
+        # the_id = f'{exp_id}.{".".join(File(fig).names(keepExtension=False)[-1:])}'
+        the_id = f'{exp_id}.{".".join(File(fig).names(keepExtension=False)[-1:])}'
+        log(f'creating figure: {the_id}', stacker=my_stacker)
+        children.append(
+            TableRow(
+                DataCell(HTMLImage(fig.abspath, fix_abs_path=True)),
+                DataCell(
+                    HTML_P(
+                        caption,
+                        id=the_id,
+                    ) if not editable else TextArea(
+                        caption,
+                        id=the_id,
+                        **{'class': 'textcell'}
+                    ),
+                    Script(js='''(() => {hotElements.push(document.currentScript.parentNode.childNodes[0])})()'''
+                           ),
+                    **{'class': 'parentcell'},
+                )
+            )
+        )
+    my_stacker.done = True
+    return Table(
+        *children,
+        Script(js='''
+   onload_funs.push(() => {
+       hotElements.forEach((e)=>{
+            original_value = apiGET(e.id).de_quote()
+            e.setText(original_value)
+            if (e.tagName === 'TEXTAREA') {
+                $(e).on('input',  _=> {
+                    apiFun(e.id,e.value)
+                })
+            }
+        }
+    )})
+        ''')
+    )
+
+DNN_REPORT_CSS = '''
+.textcell {
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.parentcell {
+    position: relative;
+    width: 100%;
+}
+
+'''

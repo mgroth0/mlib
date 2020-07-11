@@ -1,25 +1,27 @@
 import copy
+import json
 
 import pandas
 import scipy
 
+from mlib.boot.bootutil import cn, isinstsafe
 from mlib.boot.mutil import *
 class obj(object):
 
     def toDict(self):
         d = self.__dict__
-        for key, value in d.items():
+        for k, value in d.items():
             if isinstance(value, obj):
-                d[key] = value.toDict()
+                d[k] = value.toDict()
             elif isinstsafe(value, JsonSerializable):
-                d[key] = json.loads(value.to_json())
+                d[k] = json.loads(value.to_json())
             elif is_non_str_itr(value):
                 if len(arr(value).shape) == 0:
-                    d[key] = []
+                    d[k] = []
                 elif len(list(value)) > 0 and isinstance(list(value)[0], obj):
-                    d[key] = [v.toDict() for v in value]
+                    d[k] = [v.toDict() for v in value]
                 elif len(list(value)) > 0 and isinstsafe(list(value)[0], JsonSerializable):
-                    d[key] = [json.loads(v.to_json()) for v in value]
+                    d[k] = [json.loads(v.to_json()) for v in value]
         return d
 
     def __init__(self, d, forceNP=False):
@@ -46,7 +48,7 @@ class obj(object):
         for k, v in listitems(self.__dict__):
             if v in ['inf', '-inf']:
                 self.__dict__[k] = parse_inf(v)
-            elif isinstance(v,obj):
+            elif isinstance(v, obj):
                 v.fixInfs()
         return self
 
@@ -127,7 +129,7 @@ class FigSet(JsonSerializable):
                 bracketHeight = max([bracketHeight, lastBracketHeight * 1.1])
                 lastBracketHeight = bracketHeight
 
-            bracketFig = FigData.FigData()
+            bracketFig = FigData.PlotData()
             bracketFig.item_type = 'line'
             bracketFig.x = [g1, g1, g1 + .5 * (g2 - g1), g2, g2]
             def plus1(x): return x + 1
@@ -135,6 +137,7 @@ class FigSet(JsonSerializable):
             bracketFig.y = [bracketStart, bracketHeight, bracketHeight, bracketHeight, bracketStart]
             bracketFig.callout_x = (g1 + .5 * (g2 - g1)) + 1
 
+            # noinspection PyUnresolvedReferences
             bracketFig.callout = str(
                 scipy.stats.ttest_ind(data[g1], data[g2])[1]
             )

@@ -1,13 +1,15 @@
+from abc import abstractmethod, ABC
 from logging import warning
 import os
 import time
 
-from mlib.boot.bootutil import pwd
+from mlib.boot.bootutil import isinstsafe, MException
 from mlib.gpu import gpu_mem_str
+from mlib.term import MagicTermLineLogger, reds
+
 
 USE_THREADING = False
 ticTime = None
-LOG_FILE = None
 STATUS = dict()
 import numpy as np
 import sys
@@ -27,11 +29,11 @@ def initTic():
         log('got tic')
 
 def getNextIncrementalFile(file):
-    import mlib.file
-    file = mlib.file.File(file)
+    from mlib.file import File
+    file = File(file)
     onename = file.name.replace('.', '_1.')
-    onefile = mlib.file.File(file.parentDir).resolve(onename)
-    if not onefile.exists():
+    onefile = file.parent[onename]
+    if not onefile.exists:
         return onefile
     else:
         if '_' in file.name:
@@ -43,35 +45,8 @@ def getNextIncrementalFile(file):
             base = file.name.split('.')[0]
             ext = file.name.split('.')[1]
             n = 1
-        return mlib.file.File(file.parentDir).resolve(base + '_' + str(n) + '.' + ext)
+        return file.parent[base + '_' + str(n) + '.' + ext]
 
-def prep_log_file(filename, new=False):
-    if filename is None:
-        filename = os.path.basename(sys.argv[0]).replace('.py', '')
-
-
-    import mlib.boot.bootutil as bootutil
-    if bootutil.ismac():
-        filename = f'_logs/local/{filename}.log'
-    else:
-        filename = f'_logs/remote/{filename}.log'
-
-    from mlib.file import Folder
-    filename = Folder(pwd())[filename]
-
-    if new:
-        filename = getNextIncrementalFile(filename)
-
-    import mlib.file
-    global LOG_FILE
-    if LOG_FILE is None:
-        LOG_FILE = mlib.file.File(filename)
-    if LOG_FILE.exists():
-        LOG_FILE.delete()
-    LOG_FILE.mkparents()
-    LOG_FILE.touch()
-    from mlib.proj.project import QUIET
-    if not QUIET: log(f'Initialized log file: {mlib.file.File(LOG_FILE).relpath}')
 
 def setTic(t):
     global ticTime
@@ -132,6 +107,7 @@ mac = platform.system() == 'Darwin'
 
 
 def get_log_info(old_s, *args, ref=0):
+    from mlib.proj import struct
     global STARTED_GPU_INFO_THREAD, gpu_q, latest_gpu_str
     if not mac and not STARTED_GPU_INFO_THREAD:
         STARTED_GPU_INFO_THREAD = True
@@ -140,7 +116,7 @@ def get_log_info(old_s, *args, ref=0):
             target=gpu_info_fun,
             args=(gpu_q, GPU_WATCH_PERIOD_SECS)
         ).start()
-    if LOG_FILE is None: prep_log_file(None)
+    if struct.Project.LOG_FILE is None: struct.Project.prep_log_file(None)
     t = toc() / 1000
     ss = old_s
     for idx, aa in enumerate(args):
@@ -160,8 +136,7 @@ def get_log_info(old_s, *args, ref=0):
         if not gpu_q.empty():
             latest_gpu_str = gpu_q.get()
         line_start = f'{line_start}{latest_gpu_str}|'
-    from mlib.proj.project import QUIET
-    if QUIET:
+    if struct.Project.QUIET:
         line = ss
         file_line = ss
     else:
@@ -172,23 +147,45 @@ def get_log_info(old_s, *args, ref=0):
 warnings = []
 def warn(ss, *args, silent=False, ref=0):
     ref = ref + 1  # or minus 1? I think its plus
-    from mlib.boot.mutil import lreds
+    from mlib.term import lreds
     ss = lreds(ss)
     log(f'WARNING:{ss}', *args, silent=silent, ref=ref)
     warning(ss)
     warnings.append(ss)
 
-def log(ss, *args, silent=False, ref=0):
-    line, file_line, v = get_log_info(ss, *args, ref=ref)
 
+_last_stacker = None
+def log(ss, *args, silent=False, ref=0, stacker=None):
+    global _last_stacker
+    line, file_line, v = get_log_info(ss, *args, ref=ref)
+    from mlib.term import MagicTermLine
     if not silent:
-        from mlib.boot.mutil import Progress
+        from mlib.term import Progress
         for p in Progress._instances:
-            line = Progress.erase + line
-        print(line)
+            if not p.DISABLED:
+                print(MagicTermLine.ERASE)
         for p in Progress._instances:
-            p.print()
-    with open(LOG_FILE.abspath, "a") as myfile:
+            if not p.DISABLED:
+                p.print(normally=True)
+
+        if _last_stacker is not None and _last_stacker != stacker:
+            if not _last_stacker.done:
+                # err here causes recursion
+                # raise Exception(f'not ready to stack multiple logs. {_last_stacker=},{line=}')
+                _last_stacker.kill()
+            print('')
+        if stacker is not None:
+            stacker: MagicTermLineLogger
+            stacker.line = line
+            if not stacker.killed and not stacker.DISABLED:
+                stacker.print()
+            else:
+                print(reds(line))
+        else:
+            print(line)
+    _last_stacker = stacker
+    from mlib.proj import struct
+    with open(struct.Project.LOG_FILE.abspath, "a") as myfile:
         myfile.write(file_line + "\n")
     return v
 
@@ -217,3 +214,37 @@ def processName():
     else:
         import multiprocessing
         return multiprocessing.current_process().name
+
+
+
+class Muffle:
+    def __init__(self, *objs):
+        self.objs = objs
+    def __enter__(self):
+        for o in self.objs:
+            if o is not None and isinstsafe(o, Muffleable):
+                o.muffle()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for o in self.objs:
+            if o is not None and isinstsafe(o, Muffleable):
+                o.unmuffle()
+class Muffleable(ABC):
+    @abstractmethod
+    def muffle(self): pass
+    @abstractmethod
+    def unmuffle(self): pass
+
+
+STACK_KEY = ''
+
+
+def TODO():
+    trace = traceback.extract_stack()[-2]
+    fun_todo = trace[0]
+    line = trace[1]
+    return err(f'\n\n\t\t--TODO--\nFile "{fun_todo}", line {line}')
+
+# log('mutil imports done')
+def err(s, exc_class=MException):
+    log(f'err:{s}')
+    raise exc_class(s)

@@ -10,24 +10,23 @@ register_exception_handler()
 @atexit.register
 def print_exception_again():
     from mlib.boot.mlog import log
-    from mlib.proj.project import QUIET
+    from mlib.proj import struct
     # @atexit.register is first in, last out.
 
     # exctype, value, tb
-    if not QUIET: log(f'{len(exceptions)=}')
+    if not struct.Project.QUIET: log(f'{len(exceptions)=}')
     for e in exceptions:
         sys.__excepthook__(*e)
 @atexit.register
 def print_warnings_again():
     from mlib.boot.mlog import warnings
-    from mlib.proj.project import QUIET
-    if not QUIET: log(f'{len(warnings)=}')
+    from mlib.proj import struct
+    if not struct.Project.QUIET: log(f'{len(warnings)=}')
     if len(warnings) > 0:
         log('WARNINGS:')
     for w in warnings:
         log(f'\t{w}')
 
 from mlib.boot.mlog import log
-from mlib.boot.mutil import log_invokation
 
 __all__ = [log]

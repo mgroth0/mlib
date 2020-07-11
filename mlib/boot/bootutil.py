@@ -1,8 +1,16 @@
+from abc import abstractmethod
+import collections
 from pathlib import Path
 import sys
 import os
 import argparse
 import platform
+from types import SimpleNamespace
+
+import numpy as np
+
+
+
 def ismac():
     return platform.system() == 'Darwin'
 def islinux():
@@ -24,7 +32,7 @@ def register_exception_handler():
                     mac_path = LOCAL_CWD + linux_path
                     listing[i] = listing[i].replace(linux_path, mac_path)
                     listing[i] = listing[i].replace(REMOTE_CWD, '')
-        if exctype == mutil.MException:
+        if exctype == MException:
             del listing[-2]
             listing[-2] = listing[-2].split('\n')[0] + '\n'
             listing[-1] = listing[-1][0:-1]
@@ -60,3 +68,48 @@ def setup_logging(verbose=True):
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
         # tf.get_logger().setLevel('INFO')
         tf.get_logger().setLevel('WARNING')  # always at least show warnings
+def isnumber(o):
+    return isinstsafe(o, int) or isinstsafe(o, float) or isinstsafe(o, np.long)
+def will_break_numpy(o):
+    return not isnumber(o) and not isstr(o) and not isbool(o) and not islist(o)
+def all_superclasses(clazz):
+    li = []
+    for b in clazz.__bases__:
+        li.extend([b] + all_superclasses(b))
+    return li
+def all_subclasses(cls):
+    return set(cls.__subclasses__()).union(
+        [s for c in cls.__subclasses__() for s in all_subclasses(c)])
+
+def isinstsafe(o, c):
+    return isinstance(o, c) or c in all_superclasses(o.__class__)
+def isint(v):
+    return isinstance(v, int) or isinstance(v, np.int64)
+def isdict(v):
+    return isinstance(v, dict)
+def isdictsafe(v):
+    return isinstance(v, collections.Mapping)
+def isstr(v):
+    from mlib.boot.mutil import StringExtension
+    return isinstance(v, str) or isinstance(v, StringExtension)
+def istuple(v):
+    return isinstance(v, tuple)
+def islist(v):
+    return isinstance(v, list)
+def isbool(v):
+    return isinstance(v, bool)
+
+
+def cn(o): return o.__class__.__name__
+
+
+def struct():
+    return SimpleNamespace()
+
+class SimpleObject:
+    def __repr__(self): return self.__str__()
+    def __str__(self): return self.str()
+    @abstractmethod
+    def str(self) -> str: pass
+
+class MException(Exception): pass

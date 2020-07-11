@@ -2,6 +2,27 @@ from wolframclient.language import wl, wlexpr
 
 
 
+def Symbol(*args): return wl.Symbol(*args)
+def Part(*args): return wl.Part(*args)
+def StringSplit(*args): return wl.StringSplit(*args)
+def Import(*args): return wl.Import(*args)
+def Apply(*args): return wl.Apply(*args)
+def CloudExport(*args): return wl.CloudExport(*args)
+def Sequence(*args): return wl.Sequence(*args)
+def If(*args): return wl.If(*args)
+def Equal(*args): return wl.Equal(*args)
+
+def APIFunction(*args): return wl.APIFunction(*args)
+def Function(*args): return wl.Function(*args)
+def ImportString(*args): return wl.ImportString(*args)
+
+def CloudDeploy(*args): return wl.CloudDeploy(*args)
+def CloudObject(*args): return wl.CloudObject(*args)
+def CloudObjects(*args): return wl.CloudObjects(*args)
+def CloudDirectory(*args): return wl.CloudDirectory(*args)
+def FileExistsQ(*args): return wl.FileExistsQ(*args)
+def DirectoryQ(*args): return wl.DirectoryQ(*args)
+
 # from wolfpy import WOLFRAM
 
 Right = wl.Right
@@ -103,9 +124,9 @@ def Inset(
 
 def Rasterize(*args): return wl.Rasterize(*args)
 def Directive(*args): return wl.Directive(*args)
-def Opacity(*args) : return wl.Opacity(*args)
-def Style(*args) : return wl.Style(*args)
-def Callout(*args) : return wl.Callout(*args)
+def Opacity(*args): return wl.Opacity(*args)
+def Style(*args): return wl.Style(*args)
+def Callout(*args): return wl.Callout(*args)
 
 def FontWeight(w): return Rule(wl.FontWeight, w)
 def FontOpacity(o): return Rule(wl.FontOpacity, o)
@@ -155,3 +176,4 @@ def Text(s, fontSize=20, coords=(0, 0), offset=(0, 0), direction=(1, 0), color=w
         ), wlexpr('90 Degree'))
 
     return t
+

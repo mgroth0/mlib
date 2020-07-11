@@ -8,8 +8,10 @@ from typing import Union
 import pexpect
 from pexpect import TIMEOUT
 
+from mlib.boot.bootutil import isinstsafe, cn
 from mlib.boot.mlog import log
-from mlib.boot.mutil import isinstsafe, is_non_str_itr, listmap, utf_decode, isempty, isstr, cn
+from mlib.boot.mutil import is_non_str_itr, utf_decode, isempty, isstr
+from mlib.boot.stream import listmap
 
 
 class AbstractShell(ABC):

@@ -1,3 +1,0 @@
-#!/bin/sh
-"export" "MPLBACKEND=Agg"
-"exec" "$HOME/miniconda3/envs/mlib/bin/python" "test.py" "$@"
