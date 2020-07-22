@@ -5,9 +5,11 @@ from collections import Counter
 import numpy as np
 from mlib.boot import log
 from mlib.boot.mutil import isreal, objarray, make2d, concat
-from mlib.wolf.makefigslib import MakeFigsBackend
+from mlib.fig.makefigslib import MakeFigsBackend
+from mlib.wolf.bar import bar
+from mlib.wolf.line import line
+from mlib.wolf.scatter import scatter
 from mlib.wolf.wolf_lang import *
-from lib.wolf import line, scatter, bar
 
 class WolfMakeFigsBackend(MakeFigsBackend):
     @classmethod
@@ -23,11 +25,11 @@ class WolfMakeFigsBackend(MakeFigsBackend):
     @classmethod
     def none(cls): return wlexpr('None')
     @classmethod
-    def line(cls, fd): return line.line(fd)
+    def line(cls, fd): return line(fd)
     @classmethod
-    def scatter(cls, fd): return scatter.scatter(fd)
+    def scatter(cls, fd): return scatter(fd)
     @classmethod
-    def bar(cls, fd): return bar.bar(fd)
+    def bar(cls, fd): return bar(fd)
     @classmethod
     def image(cls, fd):
         log('making image')

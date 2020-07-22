@@ -1,12 +1,12 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
-import functools
 from time import time
-from typing import Callable, ClassVar
+from typing import Callable
 
 from colorama import Fore, Style
 
-from mlib.boot.bootutil import cn, SimpleObject
+from mlib.boot.lang import cn
+from mlib.obj import SimpleObject, Decorator
 
 def greens(s): return f'{Fore.GREEN}{s}{Style.RESET_ALL}'
 def reds(s): return f'{Fore.RED}{s}{Style.RESET_ALL}'
@@ -22,7 +22,6 @@ class MagicTermLine(ABC):
     last_len = 0
 
     def __init__(self):
-
         self.DISABLED = False
     @abstractmethod
     def current_line(self): pass
@@ -62,9 +61,7 @@ class MagicTermLineLogger(MagicTermLine, SimpleObject):
         self.killed = True
 
 class Progress(MagicTermLine):
-
-
-
+    PROGRESS_DISABLED = True
     _instances = []
     def __init__(self, goal, verb='doing', pnoun='things'):
         from mlib.boot import log
@@ -76,7 +73,7 @@ class Progress(MagicTermLine):
         self.entered = False
         super().__init__()
 
-        self.DISABLED = True
+        self.DISABLED = self.PROGRESS_DISABLED
 
     def __enter__(self):
         self.entered = True
@@ -123,15 +120,14 @@ class Progress(MagicTermLine):
 
 def log_invokation(
         _func=None, *, with_class=False, with_instance=False, with_args=False, with_result=False, stack=False,
-        timer=False, single_stack=False, first_only=False
+        timer=False, single_stack=False, first_only=False, invoke_only=False
 ):
     assert not (stack and single_stack)
     def actual_dec(ff):
         # cant do @wraps any more with class
         # @wraps(ff)
-        class fff:
-            def __init__(self):
-                functools.update_wrapper(self, ff)  ## TA-DA! ##
+        class fff(Decorator):
+            def __init__(self, _):
                 self.my_stacker = None
                 if stack:
                     self.my_stacker = MagicTermLineLogger(ff)
@@ -155,15 +151,12 @@ def log_invokation(
                 r_str = '' if not with_result else f' (result={result=})'
 
                 t = '' if not timer else f' ({duration=:.2f}s)'
-                if not first_only or self.first_call:
+                if not invoke_only and (not first_only or self.first_call):
                     log(f'Finished {s}!{r_str}{t}', ref=1, stacker=self.my_stacker)
                 if single_stack: self.my_stacker.done = True
                 self.first_call = False
                 return result
-            def __get__(self, instance, owner):
-                from functools import partial
-                return partial(self.__call__, instance)
-        return fff()
+        return fff(ff)
 
     if _func is None:
         # called with args. return the ACTUAL decoration

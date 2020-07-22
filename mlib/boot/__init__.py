@@ -1,32 +1,20 @@
-# print('booting') #will need to flag for a log statement like this with a sys.argv flag for enhancing the performance of startup
-import atexit
-import sys
+USE_IMPORT_LOG_HOOK = False
+
+print(
+    f'booting')  # will need to flag for a log statement like this with a sys.argv flag for enhancing the performance of startup
+from time import time
+with open('_tic.txt', 'w') as f:
+    f.write(str(int(time())))
+import mlib.boot.mlog
+if USE_IMPORT_LOG_HOOK:
+    mlib.boot.mlog.register_import_log_hook()
 import numpy
 numpy.seterr(all='raise')
 
-from mlib.boot.bootutil import register_exception_handler, exceptions
-register_exception_handler()
-
-@atexit.register
-def print_exception_again():
-    from mlib.boot.mlog import log
-    from mlib.proj import struct
-    # @atexit.register is first in, last out.
-
-    # exctype, value, tb
-    if not struct.Project.QUIET: log(f'{len(exceptions)=}')
-    for e in exceptions:
-        sys.__excepthook__(*e)
-@atexit.register
-def print_warnings_again():
-    from mlib.boot.mlog import warnings
-    from mlib.proj import struct
-    if not struct.Project.QUIET: log(f'{len(warnings)=}')
-    if len(warnings) > 0:
-        log('WARNINGS:')
-    for w in warnings:
-        log(f'\t{w}')
+import mlib.err
+mlib.err.register_exception_and_warning_handlers()
 
 from mlib.boot.mlog import log
+
 
 __all__ = [log]

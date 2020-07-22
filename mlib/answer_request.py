@@ -3,7 +3,8 @@ import readline
 import sys
 
 from mlib.boot import log
-from mlib.boot.mutil import err
+from mlib.boot.mlog import err
+from mlib.guiutil import SimpleApp
 from mlib.km import activateIdea
 
 def YesOrNo(q):

@@ -1,4 +1,4 @@
 #!/bin/sh
-"export" "MPLBACKEND=Agg"
-"exec" "$HOME/miniconda3/envs/mlib/bin/python" "main.py" "$@"
+export MPLBACKEND=Agg
+exec "$HOME/miniconda3/envs/mlib/bin/python" "boot.py" "$@"
 

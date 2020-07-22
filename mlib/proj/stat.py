@@ -3,9 +3,12 @@ import atexit
 from pycallgraph import PyCallGraph, Config
 from pycallgraph.output import GraphvizOutput
 
+from mlib.boot import log
 import mlib.file
 from mlib.file import File
+from mlib.inspect import all_superclasses, all_subclasses
 from mlib.shell import shell
+from mlib.str import StringExtension
 
 def enable_py_call_graph(output):
     # Makes code about 4 times slower
@@ -65,4 +68,16 @@ def py_deps(start, output):
     ).interact()
 
 
-
+def class_model_report(root_class):
+    # because I can't find a good python plantUML library
+    report = StringExtension('~~MY MODEL~~\n')
+    report.append_by_lines()
+    superclasses = all_superclasses(root_class)
+    subclasses = all_subclasses(root_class)
+    report += f'\troot:{root_class.__name__}'
+    for s in superclasses:
+        report += f'\t\tsuper :{s.__name__}'
+    for s in subclasses:
+        report += f'\t\tsub   :{s.__name__}'
+    log(report)
+    return report

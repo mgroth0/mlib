@@ -2,50 +2,33 @@ from abc import abstractmethod, ABC
 from logging import warning
 import os
 import time
+import traceback
+import os.path
+from multiprocessing import Process, Queue
+import atexit
+import platform
+import multiprocessing
+import threading
 
-from mlib.boot.bootutil import isinstsafe, MException
+import numpy as np
+
+from mlib.boot.lang import isinstsafe
+from mlib.err import MException, Short_MException
 from mlib.gpu import gpu_mem_str
-from mlib.term import MagicTermLineLogger, reds
+from mlib.term import MagicTermLine, Progress, MagicTermLineLogger, lreds, reds, yellows, cyans
 
 
 USE_THREADING = False
 ticTime = None
 STATUS = dict()
-import numpy as np
-import sys
-import traceback
-import os.path
+
 def initTic():
-    # err('')
     if ticTime is None:
-        with open('bin/tic.txt', 'r') as myfile:
-            data = myfile.read().replace('\n', '')
-
+        with open('_tic.txt', 'r') as myfile:
+            data = myfile.read().strip()
         setTic(np.long(data) * 1000)
+    return ticTime
 
-        if len(sys.argv) > 2 and sys.argv[2] == 'tic':
-            setTic(time.time() * 1000)
-
-        log('got tic')
-
-def getNextIncrementalFile(file):
-    from mlib.file import File
-    file = File(file)
-    onename = file.name.replace('.', '_1.')
-    onefile = file.parent[onename]
-    if not onefile.exists:
-        return onefile
-    else:
-        if '_' in file.name:
-            base = file.name.split('_')[0]
-            ext = file.name.split('_')[1].split('.')[1]
-            n = int(file.name.split('_')[1].split('.')[0])
-            n = n + 1
-        else:
-            base = file.name.split('.')[0]
-            ext = file.name.split('.')[1]
-            n = 1
-        return file.parent[base + '_' + str(n) + '.' + ext]
 
 
 def setTic(t):
@@ -54,7 +37,8 @@ def setTic(t):
 
 def tic():
     global ticTime
-    ticTime = time.time() * 1000
+    # ticTime = time.time() * 1000
+    ticTime = initTic()
     return ticTime
 
 TIC = tic()
@@ -84,10 +68,10 @@ def toc_str(t=None):
         return f'{t:.2f}'
 
 STARTED_GPU_INFO_THREAD = False
-from multiprocessing import Process, Queue
+
 gpu_q = None
 gpu_q_stop = Queue(maxsize=1)
-import atexit
+
 def stop_gpu_info_fun():
     gpu_q_stop.put('anything')
 atexit.register(stop_gpu_info_fun)
@@ -100,14 +84,12 @@ def gpu_info_fun(gpu_q, GPU_WATCH_PERIOD_SECS):
         gpu_q.put(s, block=True)
         time.sleep(GPU_WATCH_PERIOD_SECS)
 
-import platform
+
 mac = platform.system() == 'Darwin'
 
-
-
+QUIET = False
 
 def get_log_info(old_s, *args, ref=0):
-    from mlib.proj import struct
     global STARTED_GPU_INFO_THREAD, gpu_q, latest_gpu_str
     if not mac and not STARTED_GPU_INFO_THREAD:
         STARTED_GPU_INFO_THREAD = True
@@ -116,7 +98,7 @@ def get_log_info(old_s, *args, ref=0):
             target=gpu_info_fun,
             args=(gpu_q, GPU_WATCH_PERIOD_SECS)
         ).start()
-    if struct.Project.LOG_FILE is None: struct.Project.prep_log_file(None)
+
     t = toc() / 1000
     ss = old_s
     for idx, aa in enumerate(args):
@@ -136,7 +118,7 @@ def get_log_info(old_s, *args, ref=0):
         if not gpu_q.empty():
             latest_gpu_str = gpu_q.get()
         line_start = f'{line_start}{latest_gpu_str}|'
-    if struct.Project.QUIET:
+    if QUIET:
         line = ss
         file_line = ss
     else:
@@ -147,20 +129,23 @@ def get_log_info(old_s, *args, ref=0):
 warnings = []
 def warn(ss, *args, silent=False, ref=0):
     ref = ref + 1  # or minus 1? I think its plus
-    from mlib.term import lreds
+
     ss = lreds(ss)
     log(f'WARNING:{ss}', *args, silent=silent, ref=ref)
     warning(ss)
     warnings.append(ss)
 
+def logr(thing):
+    log(thing, ref=1)
+    return thing
 
 _last_stacker = None
+LOG_FILE = None
 def log(ss, *args, silent=False, ref=0, stacker=None):
     global _last_stacker
     line, file_line, v = get_log_info(ss, *args, ref=ref)
-    from mlib.term import MagicTermLine
+
     if not silent:
-        from mlib.term import Progress
         for p in Progress._instances:
             if not p.DISABLED:
                 print(MagicTermLine.ERASE)
@@ -184,10 +169,17 @@ def log(ss, *args, silent=False, ref=0, stacker=None):
         else:
             print(line)
     _last_stacker = stacker
-    from mlib.proj import struct
-    with open(struct.Project.LOG_FILE.abspath, "a") as myfile:
-        myfile.write(file_line + "\n")
+    if LOG_FILE is not None:
+        with open(LOG_FILE.abspath, "a") as myfile:
+            myfile.write(f"{file_line}\n")
     return v
+
+def logy(ss, *args, **kwargs):
+    log(yellows(ss), *args, **kwargs)
+def logr(ss, *args, **kwargs):
+    log(reds(ss), *args, **kwargs)
+def logc(ss, *args, **kwargs):
+    log(cyans(ss), *args, **kwargs)
 
 def processTag():
     name = processName()
@@ -203,7 +195,6 @@ thread_name_dict = dict()
 
 def processName():
     if USE_THREADING:
-        import threading
         ident = threading.get_ident()
         if ident in thread_name_dict.keys():
             name = thread_name_dict[ident]
@@ -212,7 +203,6 @@ def processName():
             thread_name_dict[ident] = name
         return 'T' + str(name)
     else:
-        import multiprocessing
         return multiprocessing.current_process().name
 
 
@@ -244,7 +234,72 @@ def TODO():
     line = trace[1]
     return err(f'\n\n\t\t--TODO--\nFile "{fun_todo}", line {line}')
 
-# log('mutil imports done')
 def err(s, exc_class=MException):
-    log(f'err:{s}')
+    log(reds(f'err:{s}'))
     raise exc_class(s)
+
+def short_err(s):
+    err(s, exc_class=Short_MException)
+
+
+
+
+def register_import_log_hook():
+    imported = []
+    import builtins
+    old_imp = builtins.__import__
+    def custom_import(*args, **kwargs):
+        m = old_imp(*args, **kwargs)
+        ms = m.__name__
+        if ms not in imported:
+            log(f'imported {ms}')
+            imported.append(ms)
+        return m
+    builtins.__import__ = custom_import
+
+def disp(s):
+    return log(s)
+
+
+
+
+def logverb(fun):
+    def f(*args, **kwargs):
+        log(fun.__name__ + '-ing')
+        r = fun(*args, **kwargs)
+        log(fun.__name__ + '-ed')
+        return r
+
+    return f
+
+
+
+def log_return(as_count=False):
+    def f(ff):
+        def fff(*args, **kwargs):
+            r = ff(*args, **kwargs)
+            s = f'{r}' if not as_count else f'{len(r)} {"items" if len(r) == 0 else r[0].__class__.__name__ + "s"}'
+            log(f'{ff.__name__} returned {s}', ref=1)
+            return r
+        return fff
+    return f
+
+def setup_logging(verbose=True):
+    import logging
+    import tensorflow as tf
+    import mlib.boot.mlog as loggy
+    class TF_Log_Filter(logging.Filter):
+        def filter(self, record):
+            line, file_line, v = loggy.get_log_info(record.msg)
+            record.msg = line
+            return True
+    tf.get_logger().setLevel('DEBUG')
+    if not verbose:
+        tf.get_logger().addFilter(TF_Log_Filter())  # not working
+        tf.autograph.set_verbosity(1)
+        import os
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+        # tf.get_logger().setLevel('INFO')
+        tf.get_logger().setLevel('WARNING')  # always at least show warnings
+
+log('finished setting up logging')

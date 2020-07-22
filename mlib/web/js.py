@@ -1,9 +1,8 @@
 import functools
 import os
 
-from mlib.boot.bootutil import isinstsafe
-from mlib.boot.mutil import enum
-from mlib.boot.stream import arr
+from mlib.boot.lang import isinstsafe
+from mlib.boot.stream import arr, enum
 from mlib.file import File, Temp
 from mlib.shell import shell
 

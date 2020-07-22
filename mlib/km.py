@@ -1,10 +1,11 @@
 import os
 
-from mlib.boot.bootutil import isinstsafe
+from mlib.boot.lang import isinstsafe
 from mlib.file import File
 from mlib.term import log_invokation
 def reloadIdeaFilesFromDisk(): return kmscript("C9729AC7-D386-4225-A097-92D78AFFB3AE")
-@log_invokation
+
+@log_invokation(with_args=True, invoke_only=True)
 def openInSafari(url):
     if isinstsafe(url, File): url = url.url
     return kmscript(

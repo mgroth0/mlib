@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+import inspect
+from numbers import Number
 import os
 from queue import Queue, Empty
 from subprocess import Popen, PIPE, STDOUT
@@ -8,10 +10,11 @@ from typing import Union
 import pexpect
 from pexpect import TIMEOUT
 
-from mlib.boot.bootutil import isinstsafe, cn
-from mlib.boot.mlog import log
-from mlib.boot.mutil import is_non_str_itr, utf_decode, isempty, isstr
-from mlib.boot.stream import listmap
+from mlib.boot.lang import isinstsafe, is_non_str_itr, isstr, cn
+from mlib.boot.mlog import log, warn
+from mlib.boot.stream import listmap, isempty
+from mlib.str import utf_decode
+from mlib.term import log_invokation
 
 
 class AbstractShell(ABC):
@@ -43,8 +46,8 @@ class AbstractShell(ABC):
             *command,
             silent=False
     ):
-        self.command_as_str = shell.command_str(*command)
-        self.command_as_list = shell.command_list(*command)
+        self.command_as_str = AbstractShell.command_str(*command)
+        self.command_as_list = AbstractShell.command_list(*command)
         if not silent:
             log(f'$: {self.command_as_str}')
         self.p = self._start()
@@ -71,7 +74,7 @@ class AbstractShell(ABC):
     @abstractmethod
     def sendline(self, s): pass
     def bash(self, s):
-        return self.sendline(f'/bin/bash -c """{shell.command_str(s)}"""')
+        return self.sendline(f'/bin/bash -c """{AbstractShell.command_str(s)}"""')
     @abstractmethod
     def alive(self): pass
     @abstractmethod
@@ -97,7 +100,7 @@ class ExpectShell(AbstractShell):
         return '\n'.join(listmap(utf_decode, self.readlines()))
     def readlines(self): return self.p.readlines()
     def readline(self): return self.p.readline()
-    def readline_nonblocking(self, timeout=-1):
+    def readline_nonblocking(self, timeout: Number = -1):
         line = ''
         while True:
             try:
@@ -105,6 +108,22 @@ class ExpectShell(AbstractShell):
                 if c == '\n': return line
                 else: line += c
             except TIMEOUT: return None
+
+    def readlines_nonblocking(self, timeout=0.1):
+        while True:
+            yield self.readline_nonblocking(timeout=timeout)
+
+    def pipe_and_close_on(self, expect_s):
+        for s in self.readlines_nonblocking():
+            if s is not None:
+                log(s)
+            if s is not None and expect_s in s:
+                log(f'done! ({self} got {expect_s})')
+                self.close()
+                log('closed p')
+                break
+
+    @log_invokation()
     def interact(self): return self.p.interact()
     def expect(self, *args): return self.p.expect(*args)
     def sendline(self, s): return self.p.sendline(s)
@@ -179,14 +198,49 @@ class SPShell(AbstractShell):
 
 spshell = SPShell
 
+def export(thing, *names):
+    for name in names:
+        setattr(inspect.getmodule(thing), name, thing)
+    return thing
+
 
 class SSHExpectProcess(ExpectShell):
-    def login(self):
-        self.p.expect('passphrase')
-        self.sendpass()
+    # used to match the command-line prompt
+    UNIQUE_PROMPT = r"\[PEXPECT\][\$\#] "
+    PROMPT = UNIQUE_PROMPT
+
+    # used to set shell command-line prompt to UNIQUE_PROMPT.
+    PROMPT_SET_SH = r"PS1='[PEXPECT]\$ '"
+
+    def login(self, longpass=False):
+        self.p.expect(['passphrase', 'password'])
+        if longpass:
+            self.sendlongpass()
+        else:
+            self.sendpass()
     def sendpass(self):
+        warn('huge security risk 1')
         with open('/Users/matt/.pass', 'r') as f:
             self.p.sendline(f.read()[::-1])
+    def sendlongpass(self):
+        warn('huge security risk 2')
+        with open('/Users/matt/.passlong', 'r') as f:
+            s = f.read()[::-1]
+            self.p.sendline(s)
+    def prompt(self):
+        self.p.expect(self.PROMPT)
+    def sendatprompt(self, line):
+        self.prompt()
+        self.sendline(line)
+    def setprompt(self):
+        self.p.sendline(self.PROMPT_SET_SH)
+
+def ssh(*command, **kwargs):
+    return SSHExpectProcess(['/usr/bin/ssh'] + AbstractShell.command_list(*command), **kwargs)
+
+def scp(*command, **kwargs):
+    return SSHExpectProcess(['/usr/bin/scp'] + AbstractShell.command_list(*command), **kwargs)
+
 class InteractiveExpectShell(ExpectShell):
 
 
@@ -204,4 +258,17 @@ class InteractiveExpectShell(ExpectShell):
         return f
 
 shell = ExpectShell
+def eshell(*args, **kwargs):
+    return shell(*args, **kwargs).interact()
 ishell = InteractiveExpectShell
+
+@log_invokation
+def pkill(name):
+    shell(f'pkill -f {name}').interact()
+
+
+
+def arg_str(o):
+    if isinstance(o, bool):
+        return '1' if o else '0'
+    else: return str(o)

@@ -4,8 +4,14 @@ import json
 import pandas
 import scipy
 
-from mlib.boot.bootutil import cn, isinstsafe
-from mlib.boot.mutil import *
+from mlib.boot import log
+from mlib.boot.lang import classname, isitr, isinstsafe, is_non_str_itr, cn
+from mlib.boot.stream import arr, listitems, isempty, itr, isnan
+
+import numpy as np
+
+from mlib.math import safemean, parse_inf
+
 class obj(object):
 
     def toDict(self):
@@ -114,7 +120,7 @@ class FigSet(JsonSerializable):
 
     def statBrackets(self, data, pairs):
         means = []
-        import mlib.FigData as FigData
+        import mlib.fig.PlotData as PlotData
         for d in data:
             means.append(safemean(d))
         lastBracketHeight = 0
@@ -129,7 +135,7 @@ class FigSet(JsonSerializable):
                 bracketHeight = max([bracketHeight, lastBracketHeight * 1.1])
                 lastBracketHeight = bracketHeight
 
-            bracketFig = FigData.PlotData()
+            bracketFig = PlotData.PlotData()
             bracketFig.item_type = 'line'
             bracketFig.x = [g1, g1, g1 + .5 * (g2 - g1), g2, g2]
             def plus1(x): return x + 1
@@ -142,3 +148,33 @@ class FigSet(JsonSerializable):
                 scipy.stats.ttest_ind(data[g1], data[g2])[1]
             )
             self.viss.append(bracketFig)
+
+
+debug_i = 0
+
+def todict(obj, classkey=None):
+    global debug_i
+    debug_i = debug_i + 1
+    if debug_i == 100:
+        raise Exception
+    log('todict(' + classname(obj) + '): ' + str(obj))
+    if isinstance(obj, dict):
+        data = {}
+        for (k, v) in obj.items():
+            data[k] = todict(v, classkey)
+        return data
+    elif hasattr(obj, "_ast"):
+        # noinspection PyCallingNonCallable,PyProtectedMember
+        return todict(obj._ast())
+    elif hasattr(obj, "__iter__") and not isinstance(obj, str):
+        return [todict(v, classkey) for v in obj]
+    elif hasattr(obj, "__dict__"):
+        # noinspection PyUnresolvedReferences
+        data = dict([(key, todict(value, classkey))
+                     for key, value in obj.__dict__.items()
+                     if not callable(value) and not key.startswith('_')])
+        if classkey is not None and hasattr(obj, "__class__"):
+            data[classkey] = obj.__class__.__name__
+        return data
+    else:
+        return obj

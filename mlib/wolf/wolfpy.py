@@ -13,10 +13,11 @@ from wolframclient.language import wl, wlexpr
 from wolframclient.language.expression import WLFunction, WLInputExpression
 from wolframclient.serializers import WLSerializable
 
-from mlib.boot.mutil import err, arr, utf_decode, enum, itr
-from mlib.boot.bootutil import ismac, SimpleObject, isinstsafe
-from mlib.boot.stream import listmap
+from mlib.boot.lang import ismac, isinstsafe
+from mlib.boot.mlog import err
+from mlib.boot.stream import listmap, arr, enum, itr
 from mlib.file import File
+from mlib.obj import SimpleObject
 from mlib.term import log_invokation
 from mlib.wolf.wolf_lang import CloudObjects, CloudObject, DirectoryQ, FileExistsQ, Rule, If, Import, CloudExport, CloudDeploy, ImportString
 

@@ -7,9 +7,9 @@ from wolframclient.language import wlexpr, wl
 from mlib.boot import log
 from mlib.boot.mlog import warn
 from mlib.file import File
-from mlib.web.web import arg_tags
+from mlib.web.html import arg_tags
 from mlib.wolf.wolf_lang import APIFunction, Function, If
-from mlib.wolf.wolfpy import WolframService, inputForm, APIRule, wlexprc, wlblock, FormatWLInput, PERMISSIONS, MWL, mwl
+from mlib.wolf.wolfpy import WolframService, inputForm, APIRule, wlexprc, wlblock, FormatWLInput, PERMISSIONS, MWL
 
 @dataclass
 class API(ABC):
@@ -88,7 +88,8 @@ class API(ABC):
     @classmethod
     @abstractmethod
     def cs(cls):
-        assert cls not in API._GOT_CS
+        # assert cls not in API._GOT_CS
+        # was a good idea for single page sites. But I have a multi page site now and I don't have time to make all these sites use the same javascript from one location.
         API._GOT_CS.add(cls)
 
     @abstractmethod

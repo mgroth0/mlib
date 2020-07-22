@@ -7,10 +7,11 @@ from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 
+from mlib.boot.lang import isstr, enum
+from mlib.math import isreal, sigfig
 from mlib.boot import log
-from mlib.boot.mlog import TODO
-from mlib.boot.mutil import itr, isstr, arr, ints, err, sigfig, enum, isreal
-from mlib.boot.stream import ziplist
+from mlib.boot.mlog import TODO, err
+from mlib.boot.stream import ziplist, arr, ints, itr
 from mlib.wolf.wolf_lang import *
 
 DEFAULT_TICK_SIZE = 15

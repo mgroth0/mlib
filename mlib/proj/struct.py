@@ -1,5 +1,4 @@
-from abc import abstractmethod
-import atexit
+from abc import abstractmethod, ABC
 import os
 import sys
 from time import time
@@ -7,26 +6,59 @@ from time import time
 from git import Repo
 
 from mlib.JsonSerializable import obj
-from mlib.boot import log
-from mlib.boot.bootutil import pwd, all_superclasses, all_subclasses, isstr
-from mlib.boot.dicts import SubDictProxy
-from mlib.boot.mlog import getNextIncrementalFile
-from mlib.boot.mutil import Runner, enum, err, listkeys, listitems
-from mlib.file import File, Folder, PermaDict, pwdf
+from mlib.analyses import ANALYSES, AnalysisMode, clear_cell_cache
+from mlib.boot import log, mlog
+from mlib.boot.dicts import SubDictProxy, PermaDict
+from mlib.boot.lang import listkeys, isstr, ismac, pwd, cn
+from mlib.boot.mlog import toc_str, err, logy, logc
+from mlib.boot.stream import arr, enum, listitems
+from mlib.file import File, Folder, pwdf, getNextIncrementalFile
+from mlib.inspect import mn
+from mlib.km import reloadIdeaFilesFromDisk
+from mlib.obj import SuperRunner
+from mlib.parallel import run_in_daemon
 from mlib.proj.build.mbuild import build
 from mlib.proj.build.readme import write_README
 from mlib.shell import shell
-from mlib.term import log_invokation, yellows, cyans
+from mlib.str import utf_decode
+from mlib.term import log_invokation
 from mlib.wolf import wolf_manager
 from mlib.wolf.wolfpy import WOLFRAM
 
 def main_mod_file():
     if hasattr(sys.modules['__main__'], '__file__'):
         return File(os.path.abspath(sys.modules['__main__'].__file__))
-class Project(metaclass=Runner):
-    # "True" is meaningless here, only existence of attr is checked (fix)
-    __super_runner__ = True
 
+
+def py():
+    if ismac():
+        return '/Users/matt/miniconda3/bin/python3'
+    else:
+        return '/home/matt/miniconda3/bin/python3'
+
+
+
+
+
+
+from packaging import version
+def vers(s):
+    return version.parse(str(s))
+
+
+def mexit(code, message):
+    log(message)
+    exit(code)
+
+
+
+
+
+REMOTE_CWD = None
+
+
+
+class Project(SuperRunner, ABC):
     INPUT_FILE = File('_input.txt')
 
     REQS_FILE = File('reqs.json')
@@ -47,15 +79,18 @@ class Project(metaclass=Runner):
         }
     CFG = File('cfg.yml', default=_default_config(), quiet=True)
     DOCS_FOLDER = Folder('docs')
-    LOCAL_DOCS_FOLDER = Folder('_docs')
+    # LOCAL_DOCS_FOLDER = Folder('_docs')
     RESOURCES_FOLDER = DOCS_FOLDER['resources']
+    SHADOW_RESOURCES = Folder('_Shadow_Resources')
     FIGS_FOLDER = RESOURCES_FOLDER['figs']
     DNN_FIGS_FOLDER = Folder('_figs')
+    DNN_WEB_FOLDER = Folder('_web')
     DNN_FIGS_FIGS_FOLDER = DNN_FIGS_FOLDER['figs_dnn']
     GITHUB_LFS_IMAGE_ROOT = os.path.join('https://media.githubusercontent.com/media/mgroth0/', pwdf().name, 'master')
     PYCALL_FILE = RESOURCES_FOLDER['pycallgraph.png']
     PYDEPS_OUTPUT = None
     LOG_FILE = None
+
     if main_mod_file() is not None:
         PYDEPS_OUTPUT = RESOURCES_FOLDER[
             f'{main_mod_file().name_pre_ext}.svg'
@@ -66,10 +101,16 @@ class Project(metaclass=Runner):
 
     mbuild = False
     extra_flags = []
+    clear_clear_cache_flags = [
+        'clear_cell_cache',
+        'cell_clear_cache',
+        'ccc'
+    ]
     def registered_flags(self): return [
                                            'readme',
-                                           'build'
-                                       ] + self.extra_flags + listkeys(
+                                           'build',
+                                           'cell',
+                                       ] + self.extra_flags + self.clear_clear_cache_flags + listkeys(
         self.fun_registry()
     )
 
@@ -79,8 +120,16 @@ class Project(metaclass=Runner):
 
     cfg = None
     def super_run(self):
+        from mlib.web.html import HTMLObject
+        from mlib.web import shadow
+        from mlib.proj.stat import enable_py_call_graph, py_deps, class_model_report
+        self.prep_log_file(None)
         cfg = self._get_cfg()
         self.cfg = cfg
+        self.daily(
+            enable_py_call_graph,
+            Project.PYCALL_FILE
+        )
         with WOLFRAM:
             if 'build' in cfg.FLAGS and self.mbuild:
                 assert len(cfg.FLAGS) == 1
@@ -91,14 +140,42 @@ class Project(metaclass=Runner):
             elif 'readme' in cfg.FLAGS:
                 assert len(cfg.FLAGS) == 1
                 write_README(self)
+            elif any(x in cfg.FLAGS for x in self.clear_clear_cache_flags):
+                assert len(cfg.FLAGS) == 1
+                clear_cell_cache()
+            elif 'cell' in cfg.FLAGS:
+                assert len(cfg.FLAGS) == 3
+                analysisFlag = cfg.FLAGS[1]
+                cellName = cfg.FLAGS[2]
+                analysisO = arr(ANALYSES(AnalysisMode.CELL)).first(
+                    lambda o: cn(o) == analysisFlag or mn(o).split('.')[-1] == analysisFlag
+                )
+                cell = getattr(analysisO, cellName)
+                if cell.inputs[0] is not None:
+                    inputs = cell.load_cached_input(analysisO)
+                    cell(*inputs)
+                else:
+                    cell()
             else:
                 # need to have dailyOrFlag
                 self.daily(
                     wolf_manager.manage
                 )
+                run_in_daemon(pingChecker)
                 self.run(cfg)
-    @abstractmethod
-    def run(self, cfg): pass
+        self.daily(
+            class_model_report, HTMLObject
+        )
+        self.daily(
+            # atexit.register,
+            py_deps,
+            main_mod_file(),
+            Project.PYDEPS_OUTPUT
+        )
+        # atexit.register(
+        shadow.build_docs()
+        # )
+        reloadIdeaFilesFromDisk()
 
     def push(self):
         if self.GIT.is_dirty():
@@ -124,6 +201,7 @@ class Project(metaclass=Runner):
         cfg = 'default'
         changes = {}
         flags = []
+        cell = False
         for idx, a in enum(sys.argv):
             if idx == 0: continue
             elif a.startswith('--'):
@@ -137,7 +215,9 @@ class Project(metaclass=Runner):
                     cfg = v
                 else:
                     err('arguments with one dash (-) need to be prof= or cfg=')
-            elif a in self.registered_flags():
+            elif cell or a in self.registered_flags():
+                if a == 'cell':
+                    cell = True
                 flags += [a]
             else:
                 err(f'invalid argument:{a} please see README')
@@ -169,72 +249,35 @@ class Project(metaclass=Runner):
         return SubDictProxy(self.STATE, 'daily')
 
     def daily(self, fun, *args):
-        n = fun.__name__
+        self._daily(fun, fun.__name__, *args)
+
+    def daily_reminder(self, ss):
+        self._daily(lambda: input(ss), ss)
+
+    def _daily(self, fun, key, *args):
+        n = key
         if n in self.cfg.FLAGS:
-            log(
-                yellows(f'running daily function FROM FLAG: {n}')
-            )
+            logy(f'running daily function FROM FLAG: {n}')
             fun(*args)
         elif n not in listkeys(self.fun_registry()):
-            log(
-                yellows(f'running daily function: {n}')
-            )
+            logy(f'running daily function: {n}')
             fun(*args)
             self.fun_registry().update({n: time()})
         elif self.fun_registry()[n] < time() - (3600 * 24):
-            log(
-                yellows(f'running daily function: {n}')
-            )
+            logy(f'running daily function: {n}')
             fun(*args)
             self.fun_registry().update({n: time()})
         else:
             nex = self.fun_registry()[n] + (3600 * 24)
-            log(
-                cyans(
-                    f'{n} will run next in {nex - time()} seconds'
-                )
-            )
+            logc(f'{n} will run next in {nex - time()} seconds')
 
-
-
-    QUIET = False
-    _already_initialized = False
-    def init(self):
-        # because I can't find a good python plantUML library
-        log('~~MY MODEL~~')
-        from mlib.web.web import HTMLObject
-        root_class = HTMLObject
-        superclasses = all_superclasses(root_class)
-        subclasses = all_subclasses(root_class)
-        log(f'\troot:{root_class.__name__}')
-        for s in superclasses:
-            log(f'\t\tsuper :{s.__name__}')
-        for s in subclasses:
-            log(f'\t\tsub   :{s.__name__}')
-
-        from mlib.web import shadow
-        from mlib.proj.stat import enable_py_call_graph, py_deps
-        if not self._already_initialized:
-            self.daily(
-                enable_py_call_graph,
-                Project.PYCALL_FILE
-            )
-            self.daily(
-                atexit.register,
-                py_deps,
-                main_mod_file(),
-                Project.PYDEPS_OUTPUT
-            )
-            atexit.register(shadow.build_docs)
-            self._already_initialized = True
 
     @staticmethod
     def prep_log_file(filename, new=False):
         if filename is None:
             filename = os.path.basename(sys.argv[0]).replace('.py', '')
 
-        import mlib.boot.bootutil as bootutil
-        if bootutil.ismac():
+        if ismac():
             filename = f'_logs/local/{filename}.log'
         else:
             filename = f'_logs/remote/{filename}.log'
@@ -249,12 +292,12 @@ class Project(metaclass=Runner):
             Project.LOG_FILE = File(filename)
         Project.LOG_FILE.deleteIfExists()
         Project.LOG_FILE.write('')
-        if not Project.QUIET: log(f'Initialized log file: {File(Project.LOG_FILE).relpath}')
+        mlog.LOG_FILE = Project.LOG_FILE
+        if not mlog.QUIET: log(f'Initialized log file: {File(Project.LOG_FILE).relpath}')
 
 
 def MITILI_FOLDER():
-    import mlib.boot.bootutil as bootutil
-    if bootutil.ismac():
+    if ismac():
         return File(pwd())
     else:
         return File('/home/matt/mitili')
@@ -269,3 +312,18 @@ def push_docs():
     shell('git add docs').interact()
     shell('git commit docs -m "auto-gen docs"').interact()
     shell('git push').interact()
+
+log('imported Project module')
+
+
+def pingChecker():
+    f = File('_logs/local/pingchecker.log', w='')
+    p = shell('ping www.google.com')
+    while True:
+        line = p.readline()
+        if len(line) == 0:
+            log('pingchecker got EOF')
+            f.append(f'({toc_str()})got EOF')
+            break
+        else:
+            f.append(f'({toc_str()}){utf_decode(line)}')

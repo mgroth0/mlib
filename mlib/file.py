@@ -6,10 +6,11 @@ import os
 from os.path import expanduser
 import pathlib
 from pathlib import Path
+import pickle
 import shutil
 from typing import MutableMapping
+
 import matplotlib.image as mpimg
-from PIL import Image
 import htmlmin
 import imageio
 import numpy as np
@@ -17,15 +18,19 @@ from scipy.io import loadmat, savemat
 import yaml
 
 from mlib.boot import mlog, log
-from mlib.boot.bootutil import pwd, ismac, isinstsafe, SimpleObject, cn
 from mlib.boot.dicts import DefaultMutableMapping
-from mlib.boot.mlog import Muffleable, warn
-from mlib.boot.mutil import mypwd, err, isstr, mkdir, sort, arr, notblank, isempty, StringExtension, listkeys
-from mlib.boot.stream import arrmap, listfilt
-from mlib.shell import ishell
+from mlib.boot.lang import notblank, isinstsafe, listkeys, pwd
+from mlib.boot.mlog import Muffleable, warn, err
+from mlib.boot.stream import arrmap, listfilt, __, isempty, arr, sort
+from mlib.obj import SimpleObject
+from mlib.shell import ishell, eshell
+from mlib.str import StringExtension
 from mlib.term import log_invokation
 
 
+JSON_EXTS = ['json', 'mfig']
+PICKLE_EXTS = ['pickle', 'pck', 'pcl', 'db', 'pkl', 'p']
+MD_FILE = 'metadata.json'
 
 BASE_WOLFRAM_URL = 'https://www.wolframcloud.com/obj/mjgroth'
 
@@ -48,6 +53,7 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
 
     def __init__(self, abs, remote=None, mker=False, w=None, default=None, quiet=None):
         self.IGNORE_DS_STORE = False
+        self.DELETE_DS_STORE = True
         self._default = default
         from wolframclient.language.expression import WLFunction
         from wolframclient.language import wl
@@ -71,17 +77,6 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         else:
             self.isSSH = 'test-3' in abs
         self.abspath = abs
-        self.wcurl = f'{BASE_WOLFRAM_URL}{abs}'
-        self.relpath = os.path.relpath(abs, os.getcwd())
-        self.name = os.path.basename(abs)
-        _, dot_extension = os.path.splitext(abs)
-        self.ext = dot_extension.replace('.', '')
-        self.name_pre_ext = self.name.split('.')[0]
-
-        self.parentDir = os.path.abspath(os.path.join(abs, os.pardir))
-        self.parent = Folder(self.parentDir) if self.abspath != '/' else None
-
-        self.parentName = os.path.basename(self.parentDir)
 
         # this might change so they have to be functions
         # self.isfile = os.path.isfile(self.abspath)
@@ -94,10 +89,33 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         if w is not None:
             self.write(w)
 
-        self.rel = os.path.relpath(abs, pwd())
-
         self.default_quiet = quiet
         self._default_default_quiet = None  # for muffleing
+
+    @property
+    def wcurl(self): return f'{BASE_WOLFRAM_URL}{self.abspath}'
+    @property
+    def relpath(self): return os.path.relpath(self.abspath, os.getcwd())
+
+    @property
+    def name(self):
+        return StringExtension(os.path.basename(self.abspath))
+
+    @property
+    def ext(self):
+        _, dot_extension = os.path.splitext(self.abspath)
+        return dot_extension.replace('.', '')
+    @property
+    def name_pre_ext(self):
+        return self.name.split('.')[0]
+
+    @property
+    def rel(self):
+        from mlib.proj.struct import pwd
+        return os.path.relpath(self.abspath, pwd())
+
+    def __bool__(self):
+        return self.exists
 
     def __len__(self) -> int:
         if isinstsafe(self, Folder):
@@ -111,7 +129,24 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
             return iter(self.load())
 
 
+    @property
+    def parentDir(self):
+        return os.path.abspath(os.path.join(self.abspath, os.pardir))
 
+    @property
+    def parentName(self):
+        return os.path.basename(self.parentDir)
+
+    @property
+    def parent(self):
+        return Folder(self.parentDir) if self.abspath != '/' else None
+
+    @property
+    def isemptyordoesntexist(self):
+        if not self.exists:
+            return True
+        assert self.isdir
+        return len(self.files) == 0
 
 
     @property
@@ -158,6 +193,13 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
 
     def zip_in_place(self):
         return self.zip_to(self)
+
+    @log_invokation
+    def unzip_to(self, dest, delete_after=False):
+        assert self.ext == 'zip'
+        eshell(f'unzip -o "{self.abspath}" -d {File(dest).abspath}')
+        if delete_after:
+            self.delete()
 
     def zip_to(self, dest):
         if not self.default_quiet:
@@ -252,7 +294,7 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
             import mne
             import HEP_lib
             return HEP_lib.MNE_Set_Wrapper(mne.io.read_raw_eeglab(self.abspath, preload=False))
-        elif self.ext == 'json':
+        elif self.ext in JSON_EXTS:
             j = json.loads(self.read())
             if as_object:
                 import mlib.JsonSerializable as JsonSerializable
@@ -264,8 +306,13 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
             return mpimg.imread(self.abspath)
         elif self.ext == 'mat':
             return loadmat(self.abspath)
+        elif self.ext in PICKLE_EXTS:
+            with open(self.abspath, 'rb') as f:
+                o = pickle.load(f)
+                return o
         else:
-            raise self.NoLoadSupportException(f'loading does not yet support .{self.ext} files')
+            raise self.NoLoadSupportException(
+                f'loading does not yet support .{self.ext} files (tried to load [{self.name}])')
     class NoLoadSupportException(Exception): pass
     def save(self, data, silent=None):
         import mlib.JsonSerializable as JsonSerializable
@@ -281,12 +328,16 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         if self.ext in ['yml', 'yaml']:
             self.mkparents()
             self.write(yaml.dump(data, sort_keys=False))
-        elif self.ext == 'json':
+        elif self.ext in JSON_EXTS:
             self.mkparents()
             self.write(json.dumps(data, indent=4))
         elif self.ext == 'mat':
             self.mkparents()
             savemat(self.abspath, data)
+        elif self.ext in PICKLE_EXTS:
+            self.mkparents()
+            with open(self.abspath, 'wb') as f:
+                pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
         elif self.ext == 'png':
             self.mkparents()
             im_data = np.vectorize(np.uint8)(data)
@@ -341,6 +392,7 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
     def moveto(self, new):
         assert not File(new).isdir
         shutil.move(self.abspath, File(new).abspath)
+        return File(new)
 
 
 
@@ -378,7 +430,18 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
 
 
 
+    def res_pre_ext(self, suffix):
+        abss = os.path.join(f'{self.parent.abspath}', f'{self.name_pre_ext}{suffix}')
+        if '.' in self.name:
+            abss += f'.{self.ext}'
+        if File(abss).isdirsafe:
+            return Folder(abss)
+        else:
+            return File(abss)
+
     def resolve(self, nam):
+        if nam == '.':
+            return self
         nam = str(nam)
         resolved_is_file = '.' in nam
         resolved = File(
@@ -390,8 +453,33 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         if resolved.isdirsafe: return Folder(resolved, mker=self.mker)
         return resolved
 
+
+    def resrepext(self, new):
+        f = File(os.path.join(self.parent.abspath, self.name.replace(self.ext, new)))
+        if f.isdirsafe:
+            return Folder(f)
+        else:
+            return f
+
+    def resrepname(self, old, new):
+        f = File(os.path.join(self.parent.abspath, self.name.replace(old, new)))
+        if f.isdirsafe:
+            return Folder(f)
+        else:
+            return f
+
+    def resrep(self, old, new):
+        f = File(self.abspath.replace(old, new))
+        if f.isdirsafe:
+            return Folder(f)
+        else:
+            return f
+
     def respath(self, nam): return self.resolve(nam).abspath
     def glob(self, g): return arr([File(m) for m in glob(self.join(g))])
+    def safeglob(self, g):
+        if not self.exists: return arr()
+        return self.glob(g)
     @property
     def folders(self): return listfilt(
         lambda f: f.isdir,
@@ -399,12 +487,27 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
     )
 
     @property
+    def filenames(self): return self.files.map(__.name)
+    @property
     def files(self): return self.paths.map(File)
+
+    @property
+    def files_recursive(self):
+        r = []
+        for f in self.files:
+            r += [f]
+            if f.isdir:
+                r += f.files_recursive.tolist()
+        return arr(r)
+
     @property
     def paths(self):
+        assert self.isdir
         a = arr(
             [self.join(name) for name in sort(os.listdir(self.abspath))]
         )
+        if self.DELETE_DS_STORE:
+            Folder(self)['.DS_Store'].deleteIfExists()
         if self.IGNORE_DS_STORE:
             a = a.filtered(
                 lambda n: File(n).name != '.DS_Store'
@@ -412,6 +515,8 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         return a
 
     def __getattr__(self, item):
+        if item in ['abspath', 'exists', 'isdir', '__isabstractmethod__']:
+            raise AttributeError  # for unpickling
         if not self.exists or self.isdir:
             raise AttributeError
         data = self.load(as_object=True)
@@ -428,32 +533,41 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
     #     log('saved ' + str(key))  # +' to ' + str(value)
 
     def __getitem__(self, item):
-        data = self.load()
-        return data[item]
+        if self.isdirsafe:
+            return Folder(self)[item]
+        else:
+            data = self.load()
+            return data[item]
 
     def __delitem__(self, key):
-        assert self.exists
-        data = self.load()
-        if not self.default_quiet:
-            log(f'deleting {key}')
-        del data[key]
-        self.save(data)
-        if not self.default_quiet:
-            log(f'deleted {key}')
+        if self.isdirsafe:
+            del Folder(self)[key]
+        else:
+            assert self.exists
+            data = self.load()
+            if not self.default_quiet:
+                log(f'deleting {key}')
+            del data[key]
+            self.save(data)
+            if not self.default_quiet:
+                log(f'deleted {key}')
 
 
 
     def __setitem__(self, key, value):
-        if self.exists:
-            data = self.load()
+        if self.isdirsafe:
+            Folder(self)[key] = value
         else:
-            data = {}
-        if not self.default_quiet:
-            log('saving ' + str(key))  # +' to ' + str(value)
-        data[key] = value
-        self.save(data)
-        if not self.default_quiet:
-            log('saved ' + str(key))  # +' to ' + str(value)
+            if self.exists:
+                data = self.load()
+            else:
+                data = {}
+            if not self.default_quiet:
+                log('saving ' + str(key))  # +' to ' + str(value)
+            data[key] = value
+            self.save(data)
+            if not self.default_quiet:
+                log('saved ' + str(key))  # +' to ' + str(value)
 
     def msecs(self):
         return os.path.getmtime(self.abspath)
@@ -479,8 +593,12 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         self.append(s + '\n')
 
     def append(self, s):
+        self.mkparents()
+        if not os.path.isfile(self.abspath):
+            open(self.abspath, 'a').close()
         with open(self.abspath, "a") as myfile:
             myfile.write(s)
+        return self
 
     def write_lines(self, lines, trailing_nl=False):
         self.write('\n'.join(lines))
@@ -491,9 +609,8 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         if not os.path.isfile(self.abspath):
             open(self.abspath, 'a').close()
         with open(self.abspath, 'w') as file:
-            if not isstr(s):
-                s = str(s)
-            return file.write(s)
+            file.write(str(s))
+        return self
 
     def deleteAllContents(self):
         if self.exists: [f.delete() for f in self.files]
@@ -511,6 +628,20 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         return arr(list(reversed(nams)))
 
 
+    @property
+    def pymodname(self):
+        return self.rel_to(pwdf()).replace('.py', '').replace('/', '.')
+
+    def importpy(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(self.pymodname, self.abspath)
+        foo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(foo)
+        return foo
+
+
+
+
 class Folder(File):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -521,17 +652,18 @@ class Folder(File):
         return self.resolve(item)
     def __setitem__(self, key, value):
         assert self.isdir
-        raise NotImplementedError('need have class for FileData object (not File, but FileData...)')
+        self[key].save(value)
     def __getattr__(self, item):
         # undo File's override. We don't want to load from Folders
         raise AttributeError
-
-    def make_webpage(self, htmlDoc, resource_root, resource_root_rel):
+    @property
+    def md_file(self): return self[MD_FILE].quiet()
+    def make_webpage(self, htmlDoc, resource_root, resource_root_rel, force_fix_to_abs=False):
         self.deleteAllContents()
         from mlib.web.js import JS
         from mlib.web.css import CSS
         self[f'{htmlDoc.name}.html'].write(
-            htmlmin.minify(htmlDoc.getCode(resource_root, resource_root_rel), remove_empty_space=True)
+            htmlmin.minify(htmlDoc.getCode(resource_root, resource_root_rel, force_fix_to_abs), remove_empty_space=True)
         )
 
         css = CSS(htmlDoc.stylesheet)
@@ -569,6 +701,8 @@ def mkdirs(file):
     os.makedirs(file, exist_ok=True)
 class SyncedFolder(File):
     def sync(self, config=None, batch=False, lpath=None):
+        gcloud_config()
+        from mlib.proj.struct import ismac
         assert ismac()
         import google_compute
         assert google_compute.isrunning()
@@ -645,10 +779,45 @@ ignore = Path {plot.png}
         p.interact()
 
         f.__exit__(None, None, None)
+
+
+
+        # child = SSHProcess('bash '+pwd()+'/bin/my_rsync',
+        #                    timeout=None,
+        #                    logfile_read=sys.stdout.buffer,
+        #                    )
+        #
+        # def finishSync():
+        #     # # this has to be called or it will block
+        #     if child.alive():
+        #         child.readlines()
+        #         child.wait()
+        # atexit.register(finishSync)
+        # child.login()
+        # finishSync()
+        # child.interact()
+
+
+
+
+
+
+
+        # child = SSHProcess('bash 'pwd()+'/bin/my_rsync2')
+        # child.login()
+        #
+        #
+        # child.interact()
+
+
+
+
+
 class SyncedDataFolder(SyncedFolder):
     def __init__(self, mpath, lpath):
         self.mpath = self.abspath
         err('used to have line: self.lpath = mlib.file.abspath')
+        from mlib.boot.lang import ismac, islinux
         if ismac():
             thispath = mpath
         else:
@@ -666,31 +835,6 @@ class SyncedDataFolder(SyncedFolder):
             WC['lastsave'] = 'mac'
         else:
             WC['lastsave'] = 'linux'
-class PermaDict(DefaultMutableMapping):
-    def __init__(self, file):
-        self.file = File(file)
-        super().__init__(self.file)
-        if not self.file.exists:
-            self.file.save({})
-        self.file.default_quiet = True
-    def check(self):
-        from mlib.proj.struct import GIT_DIR, GIT_IGNORE
-        if not self.file.rel.startswith('_'):
-            err('PermaDicts should be private (start with _)')
-        if GIT_DIR.exists and (not GIT_IGNORE.exists or '/_*' not in GIT_IGNORE.read()):
-            err(f'{self.file} needs to be ignored')
-        if not self.file.exists:
-            self.file.save({})
-    def __getitem__(self, val):
-        self.check()
-        return self._d[val]
-    def __setitem__(self, key, value):
-        self.check()
-        self._d[key] = value
-    def __delitem__(self, key): del self.file[key]
-
-
-
 
 
 
@@ -709,7 +853,8 @@ def strippedlines(f, fun=None):
     else:
         fun = lambda x: fun(str.strip(x))
     return arrmap(fun, lines)
-def pwdf(): return Folder(pwd())
+def pwdf():
+    return Folder(pwd())
 
 
 def write_webloc(file, url):
@@ -730,3 +875,53 @@ def write_webloc(file, url):
 
 # def __getitem__(self, k: _KT) -> _VT_co:
 #     pass
+
+def getNextIncrementalFile(file):
+    file = File(file)
+    onename = file.name.replace('.', '_1.')
+    onefile = file.parent[onename]
+    if not onefile.exists:
+        return onefile
+    else:
+        if '_' in file.name:
+            base = file.name.split('_')[0]
+            ext = file.name.split('_')[1].split('.')[1]
+            n = int(file.name.split('_')[1].split('.')[0])
+            n = n + 1
+        else:
+            base = file.name.split('.')[0]
+            ext = file.name.split('.')[1]
+            n = 1
+        return file.parent[base + '_' + str(n) + '.' + ext]
+
+def is_file(f):
+    return isinstance(f, File)
+
+
+
+def ls(d=pwd()):
+    import os
+    dirlist = os.listdir(d)
+    return dirlist
+
+def mypwd(remote=None):
+    from mlib.boot.lang import pwd, ismac
+    if remote is None:
+        return pwd()
+    elif remote:
+        if not ismac():
+            return '/home/matt'
+        else:
+            return pwd()
+    else:
+        if ismac():
+            return pwd()
+        else:
+            return '/Users/matt'
+
+
+
+
+def mkdir(name):
+    from pathlib import Path
+    Path(name).mkdir(parents=True, exist_ok=True)

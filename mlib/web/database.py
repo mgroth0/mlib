@@ -1,10 +1,9 @@
 import atexit
 
 from mlib.boot import log
-from mlib.boot.bootutil import isdictsafe
 from mlib.boot.dicts import ProxyDictRoot, RecursiveSubDictProxy
-from mlib.boot.mlog import warn
-from mlib.boot.mutil import listkeys, enum, err
+from mlib.boot.lang import isdictsafe, enum, listkeys
+from mlib.boot.mlog import warn, err
 from mlib.file import File, write_webloc
 from mlib.term import log_invokation
 

@@ -4,7 +4,7 @@ from mlib.boot.mlog import err, warn
 from mlib.file import Folder
 from mlib.term import log_invokation
 from mlib.web.api import API
-from mlib.web.web import arg_tags
+from mlib.web.html import arg_tags
 from mlib.wolf.wolf_lang import CloudObject, StringSplit, If
 from mlib.wolf.wolfpy import WolframService, wlapply, mwl, weval
 

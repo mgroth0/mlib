@@ -1,8 +1,8 @@
 from numpy import count_nonzero
 
 from mlib.boot.mlog import err
-from mlib.boot.mutil import bitwise_and, sqrt
-from mlib.boot.stream import arr
+from mlib.boot.stream import arr, bitwise_and
+from mlib.math import sqrt
 def binary_results(y_true, y_pred):
     y_true = arr(y_true)
     y_pred = arr(y_pred)

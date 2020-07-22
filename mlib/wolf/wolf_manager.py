@@ -1,9 +1,9 @@
 from wolframclient.language import wl, wlexpr
 
-from mlib.answer_request import YesOrNo
-from mlib.boot.mutil import err
+from mlib.boot.mlog import err
 from mlib.boot.stream import listmap
 from mlib.file import File, Folder
+from mlib.input import boolinput
 from mlib.term import log_invokation
 from mlib.wolf.wolfpy import weval
 _REGISTERED_SUBROOTS = (
@@ -18,13 +18,12 @@ def manage():
         if wcf.abspath in _REGISTERED_SUBROOTS:
             pass
         elif wcf.abspath == _MAIN_SUBROOT:
-
             @log_invokation(with_args=True, stack=True)
             def recurse_cloud_file(sub_wcf):
                 # f = File(f'{sub_wcf.abspath}')
                 if not sub_wcf.exists:
-                    recurse_cloud_file.my_stacker.done=True
-                    if YesOrNo(f'{sub_wcf} is not mirrored locally, delete cloud file?'):
+                    recurse_cloud_file.my_stacker.done = True
+                    if boolinput(f'{sub_wcf} is not mirrored locally, delete cloud file?'):
                         sub_wcf.wc.delete()
                 if sub_wcf.wc.isdir:
                     if Folder(sub_wcf)['.CLOUD_FILES.txt'].exists:

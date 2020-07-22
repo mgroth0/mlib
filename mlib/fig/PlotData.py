@@ -1,17 +1,22 @@
 from matplotlib import pyplot as plt, rcParams
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
 from numpy import inf
 
-from mlib.boot.mutil import arr, isreal, bitwise_and, maxreal, minreal
+from mlib.boot.lang import isitr
+from mlib.boot.stream import arr, make2d, bitwise_and
 from mlib.file import File
 from mlib.km import showInPreview
+from mlib.math import isreal, maxreal, minreal
 from mlib.term import log_invokation
 from mlib.JsonSerializable import JsonSerializable
-from mlib.boot.mutil import make2d
 
 PLT_BAR_W = 0.3
-
+CONTRAST_COLORS = [
+    [1, 0, 0],
+    [1, 0, 1],
+    [0, 1, 0],
+    [0, 0, 1]
+]
 class FigData(JsonSerializable):
     def __init__(self, title='', make=False):
         self.title = title
@@ -27,11 +32,15 @@ class PlotData(FigData):
                  ylabel='',
                  xlabel='',
                  hideYTicks=False,
-                 xticks=None,
-                 legend=None
+                 xticklabels=None,
+                 legend=None,
+                 tickFont=None,
+                 xticklocs=None
                  ):
         super().__init__(title)
 
+        self.xticklocs = xticklocs
+        self.tickFont = tickFont
         if ylim is None:
             ylim = [inf, -inf]
         if xlim is None:
@@ -52,7 +61,7 @@ class PlotData(FigData):
         self.item_type = item_type
 
         self.x = x  # % can be {}
-        self.xticks = xticks
+        self.xticklabels = xticklabels
         self.y = y
         self.err = []
 
@@ -136,7 +145,7 @@ class PlotData(FigData):
             plot = axis.bar(
                 self.x,
                 self.y,
-                tick_label=self.xticks,
+                tick_label=self.xticklabels,
                 width=PLT_BAR_W,
                 align='center',
                 color=self.item_colors
@@ -146,15 +155,22 @@ class PlotData(FigData):
                 self.y,
                 positions=self.x,
                 showmeans=True,
-                labels=self.xticks,
+                labels=self.xticklabels,  # NOT WORKING
                 widths=PLT_BAR_W,
                 boxprops={'color': self.item_colors},
                 flierprops={'markerfacecolor': self.item_colors},
                 capprops={'color': self.item_colors},
                 whiskerprops={'color': self.item_colors},
+                manage_ticks=False
             )
-            if self.xticks[0] != '':
-                axis.set_xticks(self.x)
+
+            axis.set_xticklabels(self.xticklabels)
+            axis.set_xticks(self.x)
+
+            # my "xticks" are really xticklabels...
+            # if self.xticks is None or self.xticks[0] != '':
+            # axis.set_xticks(np.zeros((len(self.x))))
+            # axis.set_xticks([])
         axis.set_title(self.title)
         if isreal(self.minX) and isreal(self.maxX):
             axis.set_xlim([self.minX, self.maxX])
@@ -173,6 +189,18 @@ class PlotData(FigData):
             #     top=False,    # ticks along the top edge are off
             #     labelbottom=False) # labels along the bottom edge are off
 
+        # if self.xticklocs is not None:
+        #     axis.set_xticks(self.xticklocs)
+        # if self.item_type == 'box' and 'reaction' in self.y_label:
+
+        if self.tickFont is not None:
+            axis.set_xticklabels(axis.get_xticklabels(), self.tickFont)
+            axis.set_yticklabels(axis.get_yticklabels(), self.tickFont)
+
+        # if self.xticklocs is not None:
+        #     axis.set_xticks(self.xticklocs)
+        # if self.item_type == 'box' and 'reaction' in self.y_label:
+
         if self.legend:
             axis.legend(
                 handles=self.legend,
@@ -188,7 +216,7 @@ class PlotData(FigData):
 
 class MultiPlot:
 
-    def __init__(self, *plots):
+    def __init__(self, *plots, legend=None):
         self.plots = plots
 
         ylab = ''
@@ -231,6 +259,9 @@ class MultiPlot:
         for p in plots:
             if ymin is not None: p.minY = ymin
             if ymax is not None: p.maxY = ymax
+
+        if legend is not None:
+            plots[-1].legend = legend  # handles
     def __getitem__(self, item):
         return self.plots.__getitem__(item)
     def __len__(self): return self.plots.__len__()
@@ -241,18 +272,21 @@ def DoubleBarOrBox(*bars, legend):
     assert len(bars) == 2  # make it work for 1 or >2 later
 
     bars[1].x = bars[1].x + PLT_BAR_W
-    bars[1].xticks = ['' for _ in bars[1].xticks]  # is this necessary?
+
+    # for barplot to show xticklabels this must be kept as is
+    bars[0].xticklabels = ['' for _ in bars[1].xticklabels]
+
+    # bars[0].xticks = None
     bars[0].item_colors = 'b'
     bars[1].item_colors = 'g'
 
-    mb = MultiPlot(*bars)
-
-    handles = [
-        Line2D([0], [0], color='b', lw=4, label=legend[0]),
-        Line2D([0], [0], color='g', lw=4, label=legend[1]),
-    ]
-
-    bars[1].legend = handles
+    mb = MultiPlot(
+        *bars,
+        legend=[
+            Line2D([0], [0], color='b', lw=4, label=legend[0]),
+            Line2D([0], [0], color='g', lw=4, label=legend[1]),
+        ]
+    )
 
     return mb
 
@@ -262,11 +296,15 @@ def make1fig(fig, file): return makefig([[fig]], file)
 def makefig(
         subplots,
         file=None,
-        show=False
+        show=False,
+        width=6,
+        height=8
 ):
     assert subplots is not None
+    if not isitr(subplots):
+        subplots = [[subplots]]
     subplots = arr(subplots, ndims=2)
-    rcParams['figure.figsize'] = 6, 8
+    rcParams['figure.figsize'] = width, height
     rcParams["savefig.dpi"] = 200
 
     with plt.style.context('dark_background'):
