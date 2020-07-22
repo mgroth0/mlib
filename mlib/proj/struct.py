@@ -9,7 +9,7 @@ from mlib.JsonSerializable import obj
 from mlib.analyses import ANALYSES, AnalysisMode, clear_cell_cache
 from mlib.boot import log, mlog
 from mlib.boot.dicts import SubDictProxy, PermaDict
-from mlib.boot.lang import listkeys, isstr, ismac, pwd, cn
+from mlib.boot.lang import listkeys, isstr, ismac, pwd, cn, HOME
 from mlib.boot.mlog import toc_str, err, logy, logc
 from mlib.boot.stream import arr, enum, listitems
 from mlib.file import File, Folder, pwdf, getNextIncrementalFile
@@ -17,9 +17,10 @@ from mlib.inspect import mn
 from mlib.km import reloadIdeaFilesFromDisk
 from mlib.obj import SuperRunner
 from mlib.parallel import run_in_daemon
+from mlib.proj.build.conda_prune import conda_prune
 from mlib.proj.build.mbuild import build
 from mlib.proj.build.readme import write_README
-from mlib.shell import shell
+from mlib.shell import shell, spshell
 from mlib.str import utf_decode
 from mlib.term import log_invokation
 from mlib.wolf import wolf_manager
@@ -126,6 +127,7 @@ class Project(SuperRunner, ABC):
         self.prep_log_file(None)
         cfg = self._get_cfg()
         self.cfg = cfg
+        self.write_reqs()
         self.daily(
             enable_py_call_graph,
             Project.PYCALL_FILE
@@ -294,6 +296,18 @@ class Project(SuperRunner, ABC):
         Project.LOG_FILE.write('')
         mlog.LOG_FILE = Project.LOG_FILE
         if not mlog.QUIET: log(f'Initialized log file: {File(Project.LOG_FILE).relpath}')
+
+    @classmethod
+    def write_reqs(cls):
+        reqs_conda = spshell(
+            f'{HOME}/miniconda3/bin/conda list -n {pwdf().name} -e'
+        ).readlines_and_raise_if_err().filtered(
+            lambda l: 'pypi' not in l and (not l.strip().startswith("#"))
+        )
+        File('reqs_conda.txt').write('\n'.join(reqs_conda))
+        conda_prune(just_cache=True)
+        good2go = conda_prune()
+        return reqs_conda, good2go
 
 
 def MITILI_FOLDER():

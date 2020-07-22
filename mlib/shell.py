@@ -12,7 +12,7 @@ from pexpect import TIMEOUT
 
 from mlib.boot.lang import isinstsafe, is_non_str_itr, isstr, cn
 from mlib.boot.mlog import log, warn
-from mlib.boot.stream import listmap, isempty
+from mlib.boot.stream import listmap, isempty, arr
 from mlib.str import utf_decode
 from mlib.term import log_invokation
 
@@ -194,7 +194,7 @@ class SPShell(AbstractShell):
         lines = self.readlines()
         if self.p.returncode != 0:
             raise Exception(f'return code not 0: {self.p.returncode}')
-        return lines
+        return arr(lines)
 
 spshell = SPShell
 
