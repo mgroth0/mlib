@@ -129,10 +129,10 @@ class Project(SuperRunner, ABC):
         self.cfg = cfg
         if ismac():
             self.write_reqs()
-        self.daily(
-            enable_py_call_graph,
-            Project.PYCALL_FILE
-        )
+            self.daily(
+                enable_py_call_graph,
+                Project.PYCALL_FILE
+            )
         with WOLFRAM:
             if 'build' in cfg.FLAGS and self.mbuild:
                 assert len(cfg.FLAGS) == 1
