@@ -299,6 +299,7 @@ class Project(SuperRunner, ABC):
 
     @classmethod
     def write_reqs(cls):
+        File('environment.yml').write(shell('conda env export').all_output())
         reqs_conda = spshell(
             f'{HOME}/miniconda3/bin/conda list -n {pwdf().name} -e'
         ).readlines_and_raise_if_err().filtered(

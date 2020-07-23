@@ -4,7 +4,8 @@ from mlib.shell import shell, SSHExpectProcess
 
 class VagrantMachine(Host):
 
-    def __init__(self, keep_up, restart):
+    # , remove=False
+    def __init__(self, keep_up, restart, rebuild):
         super().__init__(
             home='/home'
         )
@@ -14,6 +15,8 @@ class VagrantMachine(Host):
         self._isup = None
         self.keep_up = keep_up
         self.restart = restart
+        self._destroy = rebuild
+        # self._remove = remove
 
 
 
@@ -21,7 +24,9 @@ class VagrantMachine(Host):
         if self._isup is not None:
             return self._isup
         else:
-            self._isup = 'The VM is powered off' not in self.status()
+            status = self.status()
+            self._isup = ('The VM is powered off' not in status) and (
+                    'The environment has not yet been created' not in status)
         return self._isup
 
     def init(self, box: str):
@@ -38,6 +43,7 @@ class VagrantMachine(Host):
         self.vagrantfile.appendln(f'config.vm.box = "{box}"')
         if syncdir:
             self.vagrantfile.appendln(f'config.vm.synced_folder ".", "/home/{pwdf().name}"')
+        self.vagrantfile.appendln("config.disksize.size = '10GB'")
         self.vagrantfile.appendln('end')
 
     def upifhalted(self):
@@ -58,6 +64,12 @@ class VagrantMachine(Host):
             self._isup = False
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.halt()
+    def destroy(self, force=False):
+        force = ' -f' if force else ''
+        shell(f'vagrant destroy{force}').interact()
+        self._isup = False
+    # def remove_box(self):
+    #     shell('vagrant box remove').interact()
     def status(self):
         return shell('vagrant status').all_output()
     def global_status(self):
@@ -77,9 +89,12 @@ class VagrantMachine(Host):
             assert f.parent.abspath == self.vagrantfile.parent.abspath
 
 
+
     def startup(self):
         if self.restart:
             self.haltifup()
+        if self._destroy: self.destroy(force=True)
+        # if self._remove: self.remove_box()
         self.upifhalted()
     def shutdown(self):
         self.halt()

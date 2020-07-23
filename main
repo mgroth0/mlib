@@ -1,4 +1,7 @@
 #!/bin/sh
 export MPLBACKEND=Agg
-exec "$HOME/miniconda3/envs/mlib/bin/python" "boot.py" "$@"
+if [[ -z "${CONDA_HOME}" ]]; then
+  CONDA_HOME="$HOME/miniconda3"
+fi
+exec "$CONDA_HOME/envs/mlib/bin/python" "boot.py" "$@"
 

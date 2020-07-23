@@ -30,7 +30,8 @@ class OpenMindProject(RemoteProject):
             command=None,
             interact=False,
             bind=False,
-            writable=False
+            writable=False,
+            overlay=False
 
     ) -> OpenMindBashScript:
         if bind is False:
@@ -38,9 +39,9 @@ class OpenMindProject(RemoteProject):
         else:
             bind = self.path
         if command is None:
-            command = S.run_command(bind=bind, writable=writable)
+            command = S.run_command(bind=bind, writable=writable,overlay=overlay)
         else:
-            command = S.exec_command(command, bind=bind, writable=writable)
+            command = S.exec_command(command, bind=bind, writable=writable,overlay=overlay)
         return OpenMindBashScript(
             f'{self.name}.simgw',
             command,
