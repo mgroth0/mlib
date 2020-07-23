@@ -186,6 +186,8 @@ def flat1(li):
     return r
 
 def concat(*args, axis=0):
+    if len(args) == 0:
+        return arr(ndims=axis + 1)
     args = list(args)
     for idx, aa in enumerate(args):
         if not isitr(aa):
