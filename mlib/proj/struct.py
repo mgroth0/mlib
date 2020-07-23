@@ -160,10 +160,11 @@ class Project(SuperRunner, ABC):
                 else:
                     cell()
             else:
-                # need to have dailyOrFlag
-                self.daily(
-                    wolf_manager.manage
-                )
+                if ismac():
+                    # need to have dailyOrFlag
+                    self.daily(
+                        wolf_manager.manage
+                    )
                 run_in_daemon(pingChecker)
                 self.run(cfg)
         self.daily(
