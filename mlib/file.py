@@ -216,7 +216,12 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         p.echo('$DONEVAR$DONEVARR')
         p.expect('DONEWITHZIPREALLYDONEWITHZIP')
         p.close()
-        return File(f'{File(dest).abspath}.zip')
+        return File(dest).zipfile
+
+    @property
+    def zipfile(self):
+        assert '.zip' not in self.name
+        return File(f'{File(self).abspath}.zip')
 
     def copy_into(self, dest, overwrite=False):
         dest = Folder(dest)
