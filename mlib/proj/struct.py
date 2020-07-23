@@ -127,7 +127,8 @@ class Project(SuperRunner, ABC):
         self.prep_log_file(None)
         cfg = self._get_cfg()
         self.cfg = cfg
-        self.write_reqs()
+        if ismac():
+            self.write_reqs()
         self.daily(
             enable_py_call_graph,
             Project.PYCALL_FILE
