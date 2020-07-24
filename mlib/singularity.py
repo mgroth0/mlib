@@ -46,7 +46,7 @@ class SingularityRecipe(File):
         with Temp(
                 'sbuild',
                 w=f'''
-        sudo singularity build{writable} ../{self.simg.name} {self.name}
+        sudo singularity build{writable} {self.simg.name} {self.name}
         #--force
         '''):
             shell('chmod +x sbuild').interact()

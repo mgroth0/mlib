@@ -98,8 +98,3 @@ class VagrantMachine(Host):
         self.upifhalted()
     def shutdown(self):
         self.halt()
-
-class VagrantHostProject(HostProject):
-    def pre_run(self, SW, p):
-        # because of the file getting doubled in bound directory thing
-        p.sendatprompt('cd ..')
