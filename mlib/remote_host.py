@@ -23,7 +23,7 @@ class RemoteHost(Host):
 
         # this with comma sep is some terminal magic that doesn't work through python
         # fromm = '{' + files + '}'
-
+        breakpoint()
         p = scp(f'{files} {self.hostname}:{self.home}/{project_name}')
         p.login(longpass=self.use_longpass)
         p.interact()
