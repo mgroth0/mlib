@@ -9,7 +9,7 @@ from mlib.JsonSerializable import obj
 from mlib.analyses import ANALYSES, AnalysisMode, clear_cell_cache
 from mlib.boot import log, mlog
 from mlib.boot.dicts import SubDictProxy, PermaDict
-from mlib.boot.lang import listkeys, isstr, ismac, pwd, cn, HOME
+from mlib.boot.lang import listkeys, isstr, ismac, pwd, cn, HOME, islinux
 from mlib.boot.mlog import toc_str, err, logy, logc
 from mlib.boot.stream import arr, enum, listitems
 from mlib.file import File, Folder, pwdf, getNextIncrementalFile
@@ -56,6 +56,8 @@ def mexit(code, message):
 
 
 REMOTE_CWD = None
+if islinux():
+    REMOTE_CWD = pwd()
 
 
 
