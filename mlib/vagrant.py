@@ -1,5 +1,5 @@
 from mlib.file import File, pwdf
-from mlib.host import Host
+from mlib.host import Host, HostProject
 from mlib.shell import shell, SSHExpectProcess
 
 class VagrantMachine(Host):
@@ -98,3 +98,8 @@ class VagrantMachine(Host):
         self.upifhalted()
     def shutdown(self):
         self.halt()
+
+class VagrantHostProject(HostProject):
+    def pre_run(self, SW, p):
+        # because of the file getting doubled in bound directory thing
+        p.sendatprompt('cd ..')
