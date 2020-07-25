@@ -1,5 +1,5 @@
 from mlib.file import File, Temp, pwdf
-from mlib.host import HostProject
+from mlib.host import HostProject, Host
 from mlib.shell import shell
 from mlib.term import log_invokation
 
@@ -61,7 +61,10 @@ class SingularityRecipe(File):
         p.prompt()
         p.close()
 
-        vp.host.tick_job_finish()
+        if isinstance(vp, Host):
+            vp.tick_job_finish()
+        else:
+            vp.host.tick_job_finish()
         return self.simg
 
 class SingularityImage(File):
