@@ -61,10 +61,10 @@ class SingularityRecipe(File):
             p.sendatprompt('cd dnn')
         build_command = f'sudo singularity build{writable} {self.simg.name} {self.name}'
         log(f'{build_command=}')
-        breakpoint()
         p.log_to_stdout()
         p.sendatprompt(build_command)
         p.prompt()
+        p.prompt()  # NO IDEA WHY WE NEED TO EXPECT PROMPT TWICE HERE BUT WE DO OR ELSE PROCESS IS CLOSED EARLY
         p.close()
 
         if isinstance(vp, Host):
