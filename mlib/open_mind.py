@@ -54,6 +54,9 @@ class OpenMindProject(RemoteProject):
 
     def pre_run(self, SW: OpenMindBashScript, p):
         [p.sendatprompt(f'module load {m}') for m in SW.modules]
+        IN_POLESTAR = True
+        if not IN_POLESTAR:
+            p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
 
 
 class OpenMindVagrantMachine(VagrantMachine):

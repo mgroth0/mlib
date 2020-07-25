@@ -74,7 +74,8 @@ class HostProject(ABC):
         SW: OpenMindBashScript
         p = self.ssh()
         self.pre_run(SW, p)
-        p.sendatprompt(f'sudo bash {SW.name}')
+        # p.sendatprompt(f'sudo bash {SW.name}')
+        p.sendatprompt(f'bash {SW.name}') # why was I using sudo???
         return p
 
 
