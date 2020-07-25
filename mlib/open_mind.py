@@ -64,8 +64,8 @@ class OpenMindVagrantMachine(VagrantMachine):
     def ssh_login(self):
         p = self.omp.ssh()
         # https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Vagrant-to-build-a-Singularity-image%3F
-        p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
         breakpoint()
+        p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
         p.setprompt()
         p.sendatprompt('vagrant ssh')
         return p
