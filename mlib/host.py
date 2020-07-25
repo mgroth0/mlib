@@ -46,7 +46,7 @@ class HostProject(ABC):
         self.name = name
 
     def send(self, *files):
-        if len(files)>0:
+        if len(files) > 0:
             self.host.send(*files, project_name=self.name)
 
     def rm(self, *names):
@@ -75,7 +75,14 @@ class HostProject(ABC):
         p = self.ssh()
         self.pre_run(SW, p)
         # p.sendatprompt(f'sudo bash {SW.name}')
-        p.sendatprompt(f'bash {SW.name}') # why was I using sudo???
+        from mlib.open_mind import OpenMindProject
+        if isinstance(self, OpenMindProject):
+            p.sendatprompt('vagrant up')
+            p.sendatprompt('vagrant shh')
+            p.setprompt()
+            p.sendatprompt('cd ../dnn')
+        p.sendatprompt(
+            f'sudo bash {SW.name}')  # why was I using sudo??? ohhhh I might have been using sudo in order to have write access to files? yes!! I was suing sudo because that is the only way files are writable!
         return p
 
 
@@ -85,4 +92,3 @@ class HostProject(ABC):
         else:
             p.pipe_and_close_on(ContainerBashScript.FINISH_STR)
         self.host.tick_job_finish()
-
