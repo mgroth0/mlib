@@ -73,11 +73,17 @@ class OpenMindVagrantMachine(VagrantMachine):
         raise NotImplementedError
 
     def _shell(self, command):
+        assert command is not None
+        p = self.omp.ssh()
         breakpoint()
-        p = self.omp.ssh(command)
+        # p.log_to_stdout()
         # https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Vagrant-to-build-a-Singularity-image%3F
         p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
         p.setprompt()
+        p.sendatprompt(command)
+
+        p.prompt()
+        p.close()
         return p
 
     def myinit(self, box='singularityware/singularity-2.4', syncdir=True):

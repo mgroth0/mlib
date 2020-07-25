@@ -69,9 +69,8 @@ class VagrantMachine(Host):
 
 
     def status(self):
-        breakpoint()
         stat = self._shell('vagrant status').all_output()
-        return
+        return stat
     def global_status(self):
         self._eshell('vagrant global_status')
 
