@@ -31,20 +31,22 @@ class OpenMindProject(RemoteProject):
             self,
             S: Singularity,
             command=None,
+            run_args=None,
             interact=False,
             bind=False,
             writable=False,
             overlay=False
 
     ) -> OpenMindBashScript:
+        assert run_args is not None
         if bind is False:
             bind = None
         else:
             bind = self.path
         if command is None:
-            command = S.run_command(bind=bind, writable=writable, overlay=overlay)
+            command = S.run_command(run_args=run_args,bind=bind, writable=writable, overlay=overlay)
         else:
-            command = S.exec_command(command, bind=bind, writable=writable, overlay=overlay)
+            command = S.exec_command(command,run_args=run_args, bind=bind, writable=writable, overlay=overlay)
         return OpenMindBashScript(
             f'{self.name}.simgw',
             command,
