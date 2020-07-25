@@ -7,7 +7,7 @@ from mlib.remote_host import RemoteHost, RemoteProject
 from mlib.singularity import Singularity
 from mlib.vagrant import VagrantMachine
 
-
+_SRUN = 'srun -n 1 --mem=10G --gpus=1 -t 60 --pty bash'
 
 @dataclass
 class OpenMindBashScript(ContainerBashScript):
@@ -58,7 +58,7 @@ class OpenMindProject(RemoteProject):
         [p.sendatprompt(f'module load {m}') for m in SW.modules]
         # IN_POLESTAR = True
         # if not IN_POLESTAR:
-        p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
+        p.sendatprompt(_SRUN)
         p.setprompt()
 
 
@@ -75,7 +75,7 @@ class OpenMindVagrantMachine(VagrantMachine):
     def ssh_login(self):
         p = self.omp.ssh()
         # https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Vagrant-to-build-a-Singularity-image%3F
-        p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
+        p.sendatprompt(_SRUN)
         p.setprompt()
         p.sendatprompt('vagrant up')
         p.sendatprompt('vagrant ssh')
@@ -91,7 +91,7 @@ class OpenMindVagrantMachine(VagrantMachine):
         p = self.omp.ssh()
         p.log_to_stdout()
         # https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Vagrant-to-build-a-Singularity-image%3F
-        p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
+        p.sendatprompt(_SRUN)
         p.setprompt()
         p.sendatprompt(command)
 
@@ -116,7 +116,7 @@ class OpenMindVagrantMachine(VagrantMachine):
 
         # p.log_to_stdout()
         # https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Vagrant-to-build-a-Singularity-image%3F
-        p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
+        p.sendatprompt(_SRUN)
         p.setprompt()
         p.sendatprompt(command)
         p.sendatprompt('exit')
