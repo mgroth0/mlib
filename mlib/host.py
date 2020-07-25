@@ -80,6 +80,7 @@ class HostProject(ABC):
             p.sendatprompt('vagrant up')
             p.sendatprompt('vagrant shh')
             p.setprompt()
+            p.prompt() #an extra prompt expect like in the build process i think
             p.sendatprompt('cd ../dnn')
         p.sendatprompt(
             f'sudo bash {SW.name}')  # why was I using sudo??? ohhhh I might have been using sudo in order to have write access to files? yes!! I was suing sudo because that is the only way files are writable!
