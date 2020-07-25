@@ -23,7 +23,8 @@ class Singularity:
             args.insert(2, self.img.name)
         if bind is not None:
             for fromm, to in bind:
-                s += ['-B', f'{fromm}:{to}']
+                args.insert(1, '-B')
+                args.insert(2, f'{fromm}:{to}')
         s += args
         s += run_args
         return ' '.join(s)
