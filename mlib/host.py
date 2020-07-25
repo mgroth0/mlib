@@ -82,7 +82,6 @@ class HostProject(ABC):
 
         if isinstance(self, OpenMindProject):
             log('upping')
-            breakpoint()
             p.sendatprompt('vagrant up')
             log('sshing')
             p.sendatprompt('vagrant ssh')
