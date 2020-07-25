@@ -216,7 +216,9 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         p.echo('$DONEVAR$DONEVARR')
         p.expect('DONEWITHZIPREALLYDONEWITHZIP')
         p.close()
-        return File(dest).zipfile
+        zipfile = File(dest).zipfile
+        assert zipfile.exists  # might not if zip command doesnt exist in container
+        return zipfile
 
     @property
     def zipfile(self):
