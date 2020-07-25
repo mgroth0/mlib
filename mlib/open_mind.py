@@ -57,6 +57,7 @@ class OpenMindProject(RemoteProject):
         # IN_POLESTAR = True
         # if not IN_POLESTAR:
         p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
+        p.setprompt()
 
 
 class OpenMindVagrantMachine(VagrantMachine):
