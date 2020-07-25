@@ -77,6 +77,7 @@ class HostProject(ABC):
 
     @log_invokation
     def run(self, SW):
+        RUN_IN_VAGRANT = False
         from mlib.open_mind import OpenMindBashScript  # should really make a super class
         SW: OpenMindBashScript
         p = self.ssh()
@@ -85,19 +86,20 @@ class HostProject(ABC):
         from mlib.open_mind import OpenMindProject
 
         if isinstance(self, OpenMindProject):
-            log('upping')
-            p.sendatprompt('vagrant up')
-            log('sshing')
-            p.sendatprompt('vagrant ssh')
-            log('setting prompt')
-            p.setprompt()
-            log('cding')
-            # p.prompt()  # an extra prompt expect like in the build process i think
-            p.sendatprompt('cd ../dnn')
-            # breakpoint()
+            if RUN_IN_VAGRANT:
+                log('upping')
+                p.sendatprompt('vagrant up')
+                log('sshing')
+                p.sendatprompt('vagrant ssh')
+                log('setting prompt')
+                p.setprompt()
+                log('cding')
+                # p.prompt()  # an extra prompt expect like in the build process i think
+                p.sendatprompt('cd ../dnn')
+                # breakpoint()
         log('bashing')
         p.sendatprompt(
-            f'sudo bash {SW.name}')  # why was I using sudo??? ohhhh I might have been using sudo in order to have write access to files? yes!! I was suing sudo because that is the only way files are writable!
+            f'bash {SW.name}')  # why was I using sudo??? ohhhh I might have been using sudo in order to have write access to files? yes!! I was suing sudo because that is the only way files are writable!
         log('returning')
         return p
 
