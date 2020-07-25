@@ -1,3 +1,4 @@
+from mlib.boot import log
 from mlib.file import File, Temp, pwdf
 from mlib.host import HostProject, Host
 from mlib.shell import shell
@@ -58,8 +59,10 @@ class SingularityRecipe(File):
         p = vp.ssh()
         if isinstance(vp, Host):
             p.sendatprompt('cd dnn')
+        build_command = f'sudo singularity build{writable} {self.simg.name} {self.name}'
+        log(f'{build_command=}')
         breakpoint()
-        p.sendatprompt(f'sudo singularity build{writable} {self.simg.name} {self.name}')
+        p.sendatprompt(build_command)
         p.log_to_stdout()
         p.prompt()
         p.close()
