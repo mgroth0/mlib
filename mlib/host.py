@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from mlib.container_script import ContainerBashScript
 from mlib.file import pwdf
+from mlib.term import log_invokation
 
 @dataclass
 class Host(ABC):
@@ -69,6 +70,7 @@ class HostProject(ABC):
 
     def pre_run(self, SW, p): pass
 
+    @log_invokation
     def run(self, SW):
         from mlib.open_mind import OpenMindBashScript  # should really make a super class
         SW: OpenMindBashScript
@@ -79,7 +81,7 @@ class HostProject(ABC):
 
         if isinstance(self, OpenMindProject):
             p.sendatprompt('vagrant up')
-            p.sendatprompt('vagrant shh')
+            p.sendatprompt('vagrant ssh')
             p.setprompt()
             # p.prompt()  # an extra prompt expect like in the build process i think
             p.sendatprompt('cd ../dnn')
