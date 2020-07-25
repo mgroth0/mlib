@@ -92,6 +92,7 @@ class VagrantMachine(Host):
 
 
     def startup(self):
+        breakpoint()
         if self.restart:
             self.haltifup()
         if self._destroy: self.destroy(force=True)
