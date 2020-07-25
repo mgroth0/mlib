@@ -1,6 +1,7 @@
 from mlib.file import File, Temp, pwdf
 from mlib.host import HostProject
 from mlib.shell import shell
+from mlib.term import log_invokation
 
 
 class Singularity:
@@ -39,6 +40,7 @@ class SingularityRecipe(File):
         self.simg = SingularityImage(f'{simg}.simg')
         self.img = File(f'{simg}.img')
 
+    @log_invokation
     def build(self, vp: HostProject, writable=False):
         writable = ' --writable' if writable else ''
         self.simg.deleteIfExists()
