@@ -23,3 +23,8 @@ def kmscript(idd, param=None):
 def osascript(script):
     os.system("osascript -e '" + script + "'")
 def showInPreview(imageFile=None): kmscript("83575D89-FCCD-4F0A-8573-752C0EFDB881", imageFile)
+
+class Safari:
+    def open(self, other):
+        openInSafari(other)
+Safari = Safari()

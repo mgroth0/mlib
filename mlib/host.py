@@ -51,6 +51,10 @@ class HostProject(ABC):
         if len(files) > 0:
             self.host.send(*files, project_name=self.name)
 
+    def get(self, *files):
+        if len(files) > 0:
+            self.host.get(*files, project_name=self.name)
+
     def rm(self, *names):
         self.ssh_commands(*[f'rm {name}' for name in names])
 
