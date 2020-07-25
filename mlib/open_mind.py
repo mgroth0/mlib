@@ -82,7 +82,8 @@ class OpenMindVagrantMachine(VagrantMachine):
         p.setprompt()
         p.sendatprompt(command)
 
-        p.prompt()
+        p.sendatprompt('exit')
+        p.sendatprompt('exit')
         p.close()
         return p
 
