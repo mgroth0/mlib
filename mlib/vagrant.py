@@ -69,7 +69,10 @@ class VagrantMachine(Host):
 
 
     def status(self):
-        return self._shell('vagrant status').all_output()
+        breakpoint()
+        stat = self._shell('vagrant status').all_output()
+        breakpoint()
+        return
     def global_status(self):
         self._eshell('vagrant global_status')
 
@@ -92,7 +95,6 @@ class VagrantMachine(Host):
 
 
     def startup(self):
-        breakpoint()
         if self.restart:
             self.haltifup()
         if self._destroy: self.destroy(force=True)
