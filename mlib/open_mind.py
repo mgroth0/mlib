@@ -41,12 +41,12 @@ class OpenMindProject(RemoteProject):
         assert run_args is not None
         if bind is False:
             bind = None
-        else:
-            bind = self.path
+        # else:
+        #     bind = self.path
         if command is None:
-            command = S.run_command(run_args=run_args,bind=bind, writable=writable, overlay=overlay)
+            command = S.run_command(run_args=run_args, bind=bind, writable=writable, overlay=overlay)
         else:
-            command = S.exec_command(command,run_args=run_args, bind=bind, writable=writable, overlay=overlay)
+            command = S.exec_command(command, run_args=run_args, bind=bind, writable=writable, overlay=overlay)
         return OpenMindBashScript(
             f'{self.name}.simgw',
             command,
