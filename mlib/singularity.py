@@ -62,8 +62,8 @@ class SingularityRecipe(File):
         build_command = f'sudo singularity build{writable} {self.simg.name} {self.name}'
         log(f'{build_command=}')
         breakpoint()
-        p.sendatprompt(build_command)
         p.log_to_stdout()
+        p.sendatprompt(build_command)
         p.prompt()
         p.close()
 
