@@ -22,6 +22,7 @@ class Singularity:
             args.insert(1, '--overlay')
             args.insert(2, self.img.name)
         if bind is not None:
+            breakpoint()
             for fromm, to in bind:
                 s += ['-B', f'{fromm}:{to}']
         s += args
