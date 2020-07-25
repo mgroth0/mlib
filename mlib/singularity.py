@@ -43,17 +43,21 @@ class SingularityRecipe(File):
         writable = ' --writable' if writable else ''
         self.simg.deleteIfExists()
         # size gets doubled if I put it in bound directory... a vagrant bug I think
-        with Temp(
-                'sbuild',
-                w=f'''
-        sudo singularity build{writable} {self.simg.name} {self.name}
-        #--force
-        '''):
-            shell('chmod +x sbuild').interact()
-            p = vp.ssh('sudo ./sbuild')
-            p.log_to_stdout()
-            p.prompt()
-            p.close()
+        # with Temp(
+        #         'sbuild',
+        #         w=f'''
+        # sudo singularity build{writable} {self.simg.name} {self.name}
+        # # --force
+        # '''):
+        # shell('chmod +x sbuild').interact()
+        # p = vp.ssh('sudo ./sbuild')
+
+        # can no longer do the temp sbuild file since I may be doing this command in open mind and would have to send over the sbuild file... not worth it
+        p = vp.ssh(f'sudo singularity build{writable} {self.simg.name} {self.name}')
+
+        p.log_to_stdout()
+        p.prompt()
+        p.close()
 
         vp.host.tick_job_finish()
         return self.simg

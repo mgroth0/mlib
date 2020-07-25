@@ -1,10 +1,10 @@
 from mlib.file import File, pwdf
-from mlib.host import Host, HostProject
-from mlib.shell import shell, SSHExpectProcess
+from mlib.host import Host
+from mlib.shell import shell, SSHExpectProcess, eshell
+
 
 class VagrantMachine(Host):
 
-    # , remove=False
     def __init__(self, keep_up, restart, rebuild):
         super().__init__(
             home='/home'
@@ -16,7 +16,6 @@ class VagrantMachine(Host):
         self.keep_up = keep_up
         self.restart = restart
         self._destroy = rebuild
-        # self._remove = remove
 
 
 
@@ -30,8 +29,7 @@ class VagrantMachine(Host):
         return self._isup
 
     def init(self, box: str):
-        # shell(f'cd {dir.abspath}').interact()
-        shell(f'vagrant init {box}').interact()
+        self._shell(f'vagrant init {box}').interact()
     def myinit(self, box='singularityware/singularity-2.4', syncdir=True):
         assert not self.vagrantfile.exists
         self.vagrantfile.write('''
@@ -51,7 +49,7 @@ class VagrantMachine(Host):
             self.up()
     def up(self):
         assert not self.isup()
-        shell('vagrant up').interact()
+        self._eshell('vagrant up')
         self._isup = True
     __enter__ = up
     def haltifup(self, force=False):
@@ -60,22 +58,25 @@ class VagrantMachine(Host):
     def halt(self, force=False):
         if (not self.keep_up) or force:
             assert self.isup()
-            shell('vagrant halt').interact()
+            self._eshell('vagrant halt')
             self._isup = False
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.halt()
     def destroy(self, force=False):
         force = ' -f' if force else ''
-        shell(f'vagrant destroy{force}').interact()
+        self._eshell(f'vagrant destroy{force}')
         self._isup = False
-    # def remove_box(self):
-    #     shell('vagrant box remove').interact()
+
+
     def status(self):
-        return shell('vagrant status').all_output()
+        return self._shell('vagrant status').all_output()
     def global_status(self):
-        shell('vagrant global_status').interact()
+        self._eshell('vagrant global_status')
 
-
+    def _eshell(self,command):
+        return self._shell(command).interact()
+    def _shell(self,command):
+        return shell(command)
 
 
     # vagrant ssh -- -t "{command}"
