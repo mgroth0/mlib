@@ -60,6 +60,10 @@ class OpenMindProject(RemoteProject):
 
 
 class OpenMindVagrantMachine(VagrantMachine):
+    # because between shells these up'ed machines dont even persits. I up it more manually in the ssh_login override
+    def halt(self, force=False): pass
+    def up(self): pass
+
     def __init__(self, keep_up, restart, rebuild, omp: OpenMindProject):
         super().__init__(keep_up, restart, rebuild)
         self.omp = omp
@@ -70,7 +74,9 @@ class OpenMindVagrantMachine(VagrantMachine):
         # https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Vagrant-to-build-a-Singularity-image%3F
         p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
         p.setprompt()
+        p.sendatprompt('vagrant up')
         p.sendatprompt('vagrant ssh')
+        p.setprompt()
         return p
 
     def send(self, *files, project_name):

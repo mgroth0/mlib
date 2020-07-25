@@ -56,7 +56,10 @@ class SingularityRecipe(File):
 
         # can no longer do the temp sbuild file since I may be doing this command in open mind and would have to send over the sbuild file... not worth it
         breakpoint()
-        p = vp.ssh(f'sudo singularity build{writable} {self.simg.name} {self.name}')
+        p = vp.ssh()
+        if isinstance(vp, Host):
+            p.sendatprompt('cd dnn')
+        p.sendatprompt(f'sudo singularity build{writable} {self.simg.name} {self.name}')
         p.log_to_stdout()
         p.prompt()
         p.close()
