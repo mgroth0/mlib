@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import sys
 from typing import List
 
 from mlib.container_script import ContainerBashScript
@@ -72,11 +73,12 @@ class OpenMindVagrantMachine(VagrantMachine):
     def send(self, *files, project_name):
         raise NotImplementedError
 
-    def _shell(self, command):
+
+    def _eshell(self, command):
         assert command is not None
         p = self.omp.ssh()
         # breakpoint()
-        # p.log_to_stdout()
+        p.log_to_stdout()
         # https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Vagrant-to-build-a-Singularity-image%3F
         p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
         p.setprompt()
@@ -85,7 +87,33 @@ class OpenMindVagrantMachine(VagrantMachine):
         p.sendatprompt('exit')
         p.sendatprompt('exit')
         p.close()
-        return p
+
+    def _shell_output(self, command):
+        assert command is not None
+        p = self.omp.ssh()
+        # breakpoint()
+
+
+        class MyBuffer:
+            def __init__(self):
+                self.output = ''
+            def write(self, data):
+                self.output += data
+            def flush(self):
+                pass
+        buf = MyBuffer()
+        p.logfile_read = buf
+
+        # p.log_to_stdout()
+        # https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Vagrant-to-build-a-Singularity-image%3F
+        p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
+        p.setprompt()
+        p.sendatprompt(command)
+        p.prompt()
+        p.sendatprompt('exit')
+        p.sendatprompt('exit')
+        p.close()
+        return buf.output
 
     def myinit(self, box='singularityware/singularity-2.4', syncdir=True):
         raise NotImplementedError

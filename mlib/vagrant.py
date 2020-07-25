@@ -67,17 +67,28 @@ class VagrantMachine(Host):
         self._eshell(f'vagrant destroy{force}')
         self._isup = False
 
+    def _shell_output(self, command):
+        return self._shell(command).all_output()
 
     def status(self):
-        stat = self._shell('vagrant status').all_output()
+        stat = self._shell_output('vagrant status')
         return stat
+
+
+
     def global_status(self):
         self._eshell('vagrant global_status')
 
-    def _eshell(self,command):
+    def _eshell(self, command):
         return self._shell(command).interact()
-    def _shell(self,command):
+    def _shell(self, command):
         return shell(command)
+
+
+    def _shell_do(self, command):
+        return self._shell(command)
+    def _shell_output(self, command):
+        return self._shell(command).all_output()
 
 
     # vagrant ssh -- -t "{command}"
