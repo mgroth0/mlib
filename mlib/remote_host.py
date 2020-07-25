@@ -29,7 +29,7 @@ class RemoteHost(Host):
 
     def get(self, *files, project_name):
         for f in files:
-            p = scp(f'{self.hostname}:{self.home}/{project_name}/{f} .')
+            p = scp(f'-r {self.hostname}:{self.home}/{project_name}/{f} .')
             p.login(longpass=self.use_longpass)
             p.interact()
 

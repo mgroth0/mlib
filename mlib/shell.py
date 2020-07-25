@@ -113,12 +113,14 @@ class ExpectShell(AbstractShell):
         while True:
             yield self.readline_nonblocking(timeout=timeout)
 
-    def pipe_and_close_on(self, expect_s):
+    def pipe_and_close_on(self, expect_s, close_fun=None):
         for s in self.readlines_nonblocking():
             if s is not None:
                 log(s)
             if s is not None and expect_s in s:
                 log(f'done! ({self} got {expect_s})')
+                if close_fun is not None:
+                    close_fun(self)
                 self.close()
                 log('closed p')
                 break

@@ -96,7 +96,8 @@ class HostProject(ABC):
             p.sendatprompt('cd ../dnn')
             # breakpoint()
         log('bashing')
-        p.sendatprompt(f'sudo bash {SW.name}')  # why was I using sudo??? ohhhh I might have been using sudo in order to have write access to files? yes!! I was suing sudo because that is the only way files are writable!
+        p.sendatprompt(
+            f'sudo bash {SW.name}')  # why was I using sudo??? ohhhh I might have been using sudo in order to have write access to files? yes!! I was suing sudo because that is the only way files are writable!
         log('returning')
         return p
 
@@ -105,5 +106,5 @@ class HostProject(ABC):
         if SW.interact:
             p.interact()
         else:
-            p.pipe_and_close_on(ContainerBashScript.FINISH_STR)
+            p.pipe_and_close_on(ContainerBashScript.FINISH_STR, close_fun=lambda p: p.sendline('exit'))
         self.host.tick_job_finish()
