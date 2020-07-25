@@ -109,7 +109,6 @@ class OpenMindVagrantMachine(VagrantMachine):
         p.sendatprompt('srun -n 1 --mem=10G -t 60 --pty bash')
         p.setprompt()
         p.sendatprompt(command)
-        p.prompt()
         p.sendatprompt('exit')
         p.sendatprompt('exit')
         p.close()
