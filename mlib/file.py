@@ -217,7 +217,7 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         p.expect('DONEWITHZIPREALLYDONEWITHZIP')
         p.close()
         zipfile = File(dest).zipfile
-        breakpoint()
+        # breakpoint()
         assert zipfile.exists  # might not if zip command doesnt exist in container
         return zipfile
 
