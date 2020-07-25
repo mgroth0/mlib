@@ -7,7 +7,7 @@ from mlib.remote_host import RemoteHost, RemoteProject
 from mlib.singularity import Singularity
 from mlib.vagrant import VagrantMachine
 
-_SRUN = 'srun -n 1 --mem=10G --gpus=1 -t 60 --pty bash'
+_SRUN = 'srun -n 1 --mem=10G --gres=gpu:1 --constraint=any-gpu -t 60 --pty bash'
 
 @dataclass
 class OpenMindBashScript(ContainerBashScript):
