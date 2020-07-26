@@ -17,7 +17,7 @@ class Singularity:
         s += ['singularity']
         args = list(args)
         # NVIDIA binaries may not be bound with --writable
-        # args.insert(1, '--nv')  # gpu support
+        args.insert(1, '--nv')  # gpu support
         if writable:
             args.insert(1, '--writable')
         if overlay:

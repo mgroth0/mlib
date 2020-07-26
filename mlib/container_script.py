@@ -9,7 +9,12 @@ class ContainerBashScript:
     bashscript_str: str
     def __post_init__(self):
         txt = f'''
-        mkdir /home/dnn/docs_local
+        # mkdir /om5/user/mjgroth/dnn/docs_local
+        cd /om5/user/mjgroth/dnn
+        git pull
+        cd /om5/user/mjgroth/mlib
+        git pull
+        cd /om5/user/mjgroth/dnn
         {self.bashscript_str}
         echo {self.FINISH_STR}
         '''
