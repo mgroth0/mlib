@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Optional
 
 from mlib.boot import log
 from mlib.container_script import ContainerBashScript
@@ -73,15 +74,15 @@ class HostProject(ABC):
             p.sendatprompt(command)
         return p
 
-    def pre_run(self, SW, p): pass
+    def pre_run(self, SW, p,srun: Optional[str]): pass
 
     @log_invokation
-    def run(self, SW):
+    def run(self, SW,srun: Optional[str]):
         RUN_IN_VAGRANT = False
         from mlib.open_mind import OpenMindBashScript  # should really make a super class
         SW: OpenMindBashScript
         p = self.ssh()
-        self.pre_run(SW, p)
+        self.pre_run(SW, p,srun)
         # p.sendatprompt(f'sudo bash {SW.name}')
         from mlib.open_mind import OpenMindProject
 

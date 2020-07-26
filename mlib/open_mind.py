@@ -1,13 +1,11 @@
 from dataclasses import dataclass
 import sys
-from typing import List
+from typing import List, Optional
 
 from mlib.container_script import ContainerBashScript
 from mlib.remote_host import RemoteHost, RemoteProject
 from mlib.singularity import Singularity
 from mlib.vagrant import VagrantMachine
-
-_SRUN = 'srun -n 1 --mem=10G --gres=gpu:1 --constraint=any-gpu -t 60 --pty bash'
 
 @dataclass
 class OpenMindBashScript(ContainerBashScript):
@@ -54,12 +52,13 @@ class OpenMindProject(RemoteProject):
             interact=interact
         )
 
-    def pre_run(self, SW: OpenMindBashScript, p):
+    def pre_run(self, SW: OpenMindBashScript, p, srun: Optional[str]):
         [p.sendatprompt(f'module load {m}') for m in SW.modules]
         # IN_POLESTAR = True
         # if not IN_POLESTAR:
-        p.sendatprompt(_SRUN)
-        p.setprompt()
+        if srun is not None:
+            p.sendatprompt(srun)
+            p.setprompt()
 
 
 class OpenMindVagrantMachine(VagrantMachine):
@@ -67,16 +66,18 @@ class OpenMindVagrantMachine(VagrantMachine):
     def halt(self, force=False): pass
     def up(self): pass
 
-    def __init__(self, keep_up, restart, rebuild, omp: OpenMindProject):
+    def __init__(self, keep_up, restart, rebuild, omp: OpenMindProject, srun: Optional[str]):
         super().__init__(keep_up, restart, rebuild)
         self.omp = omp
+        self.srun = srun
 
     # vagrant ssh -- -t "{command}"
     def ssh_login(self):
         p = self.omp.ssh()
         # https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Vagrant-to-build-a-Singularity-image%3F
-        p.sendatprompt(_SRUN)
-        p.setprompt()
+        if self.srun:
+            p.sendatprompt(self.srun)
+            p.setprompt()
         p.sendatprompt('vagrant up')
         p.sendatprompt('vagrant ssh')
         p.setprompt()
@@ -91,12 +92,13 @@ class OpenMindVagrantMachine(VagrantMachine):
         p = self.omp.ssh()
         p.log_to_stdout()
         # https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Vagrant-to-build-a-Singularity-image%3F
-        p.sendatprompt(_SRUN)
-        p.setprompt()
+        if self.srun:
+            p.sendatprompt(self.srun)
+            p.setprompt()
         p.sendatprompt(command)
 
         p.sendatprompt('exit')
-        p.sendatprompt('exit')
+        if self.srun: p.sendatprompt('exit')
         p.close()
 
     def _shell_output(self, command):
@@ -116,11 +118,12 @@ class OpenMindVagrantMachine(VagrantMachine):
 
         # p.log_to_stdout()
         # https://github.mit.edu/MGHPCC/OpenMind/wiki/How-to-use-Vagrant-to-build-a-Singularity-image%3F
-        p.sendatprompt(_SRUN)
-        p.setprompt()
+        if self.srun:
+            p.sendatprompt(self.srun)
+            p.setprompt()
         p.sendatprompt(command)
         p.sendatprompt('exit')
-        p.sendatprompt('exit')
+        if self.srun: p.sendatprompt('exit')
         p.close()
         return buf.output
 
