@@ -64,7 +64,7 @@ class SingularityRecipe(File):
         p = vp.ssh()
         if isinstance(vp, Host):
             p.sendatprompt('cd dnn')
-        build_command = f'sudo singularity build{writable} {self.simg.name} {self.name}'
+        build_command = f'sudo singularity -v build{writable} {self.simg.name} {self.name}'
         log(f'{build_command=}')
         p.log_to_stdout()
         p.sendatprompt(build_command)
