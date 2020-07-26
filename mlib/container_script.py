@@ -11,6 +11,7 @@ class ContainerBashScript:
         txt = f'''
         # mkdir /om5/user/mjgroth/dnn/docs_local
         cd /om5/user/mjgroth/dnn
+        git reset --hard # bc scripts were send through scp
         git pull
         cd /om5/user/mjgroth/mlib
         git pull
