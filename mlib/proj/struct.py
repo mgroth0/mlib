@@ -172,16 +172,18 @@ class Project(SuperRunner, ABC):
         self.daily(
             class_model_report, HTMLObject
         )
-        self.daily(
-            # atexit.register,
-            py_deps,
-            main_mod_file(),
-            Project.PYDEPS_OUTPUT
-        )
+        if ismac():
+            self.daily(
+                # atexit.register,
+                py_deps,
+                main_mod_file(),
+                Project.PYDEPS_OUTPUT
+            )
         # atexit.register(
         shadow.build_docs()
         # )
-        reloadIdeaFilesFromDisk()
+        if ismac():
+            reloadIdeaFilesFromDisk()
 
     def push(self):
         if self.GIT.is_dirty():
