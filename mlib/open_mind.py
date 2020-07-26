@@ -46,7 +46,7 @@ class OpenMindProject(RemoteProject):
         else:
             command = S.exec_command(command, run_args=run_args, bind=bind, writable=writable, overlay=overlay)
         if interact:
-            command += ['--INTERACT=1']
+            command += ' --INTERACT=1'
         return OpenMindBashScript(
             f'{self.name}.simgw',
             command,
