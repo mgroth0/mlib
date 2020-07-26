@@ -180,7 +180,8 @@ class Project(SuperRunner, ABC):
                 Project.PYDEPS_OUTPUT
             )
         # atexit.register(
-        shadow.build_docs()
+        if ismac():  # not doing this on openmind yet because it erases docs_local/results.html which I am using. need to fix this though
+            shadow.build_docs()
         # )
         if ismac():
             reloadIdeaFilesFromDisk()
