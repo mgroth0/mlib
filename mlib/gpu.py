@@ -1,11 +1,12 @@
 # CREDS: https://github.com/peci1
-breakpoint()
+
 import re
 import subprocess
 import sys
 from types import SimpleNamespace
 
 def gpu_stats(the_gpu_i):
+    breakpoint()
     processes = subprocess.run('nvidia-smi', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if processes.returncode != 0:
         print('nvidia-smi exited with error code {}:'.format(processes.returncode))
