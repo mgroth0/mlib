@@ -6,7 +6,7 @@ import sys
 from types import SimpleNamespace
 
 def gpu_stats(the_gpu_i):
-    processes = subprocess.run('nvidia-smi', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    processes = subprocess.run('/usr/bin/nvidia-smi', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if processes.returncode != 0:
         print('nvidia-smi exited with error code {}:'.format(processes.returncode))
         print(processes.stdout.decode() + processes.stderr.decode())
