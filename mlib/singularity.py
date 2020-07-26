@@ -16,6 +16,7 @@ class Singularity:
         s = ['SINGULARITYENV_CONDA_HOME=/matt/miniconda3']
         s += ['singularity']
         args = list(args)
+        args.insert(1, '--nv')  # gpu support
         if writable:
             args.insert(1, '--writable')
         if overlay:
