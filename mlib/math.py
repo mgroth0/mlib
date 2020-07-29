@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+from enum import Enum, auto
+from typing import Union
+
 from scipy import signal
 from scipy.signal import lfilter
 import scipy.signal
@@ -316,3 +320,59 @@ def unitscale_demean(array):
 
 def ntrue(*args):
     return sum(args)
+
+class TimeUnit(Enum):
+    MS = auto()
+    SEC = auto()
+    MIN = auto()
+    HOUR = auto()
+
+@dataclass
+class TimeSeries:
+    y: Union[list, np.ndarray]
+    t: Union[list, np.ndarray]
+    y_unit: str
+    t_unit: TimeUnit
+
+    def __post_init__(self):
+        self.est_t_per_sample = (self.t[-1] - self.t[0]) / len(self.t)
+
+    def ds(self, n):
+        return TimeSeries(
+            y=simple_downsample(self.y, n),
+            t=simple_downsample(self.t, n),
+            y_unit=self.y_unit,
+            t_unit=self.t_unit,
+        )
+
+    def __getitem__(self, item):
+        return TimeSeries(
+            y=self.y[item],
+            t=self.t[item],
+            y_unit=self.y_unit,
+            t_unit=self.t_unit,
+        )
+
+    def time_slice(self, start, stop):
+        start_i = np.argwhere(self.t >= start)[0][0]
+        stop_i = np.argwhere(self.t >= stop)[0][0]
+        return self[start_i:stop_i]
+
+    def time_slice_apx(self, start, stop):
+        start_i = int(round(start / self.est_t_per_sample))
+        stop_i = int(round(stop / self.est_t_per_sample))
+        return self[start_i:stop_i]
+
+@dataclass
+class TimePoints:
+    t: Union[list, np.ndarray]
+    t_unit: TimeUnit
+
+def autoYRange(ar):
+    mn = min(ar)
+    mx = max(ar)
+    dif = mx - mn
+    ten = dif * 0.1
+    mn = mn - ten
+    mx = mx + ten
+    return mn, mx

@@ -130,7 +130,9 @@ class Project(SuperRunner, ABC):
         cfg = self._get_cfg()
         self.cfg = cfg
         if ismac():
-            self.write_reqs()
+            self.daily(
+                self.write_reqs
+            )
             self.daily(
                 enable_py_call_graph,
                 Project.PYCALL_FILE
@@ -180,7 +182,7 @@ class Project(SuperRunner, ABC):
                 Project.PYDEPS_OUTPUT
             )
         # atexit.register(
-        if ismac():  # not doing this on openmind yet because it erases docs_local/results.html which I am using. need to fix this though
+        if ismac() and shadow.enabled:  # not doing this on openmind yet because it erases docs_local/results.html which I am using. need to fix this though
             shadow.build_docs()
         # )
         if ismac():

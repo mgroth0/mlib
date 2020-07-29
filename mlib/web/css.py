@@ -9,6 +9,7 @@ from mlib.file import File, Temp
 
 # Gutter icon linking to dark.css from ide-scripting would do well here
 DARK_CSS = File(__file__).parent['dark.css'].read()
+TABS_CSS = File(__file__).parent['tabs.css'].read()
 PIXEL_CSS = File(__file__).parent['pixel.css'].read()
 
 

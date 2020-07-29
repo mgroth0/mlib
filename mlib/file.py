@@ -226,12 +226,24 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         assert '.zip' not in self.name
         return File(f'{File(self).abspath}.zip')
 
-    def copy_into(self, dest, overwrite=False):
+    def copy_into(
+            self,
+            dest,
+            overwrite=False,
+            pass_if_doesnt_exist=False
+    ):
+        if pass_if_doesnt_exist and not self: return
         dest = Folder(dest)
         dest.mkdirs()
         return self.copy_to(dest[self.name], overwrite=overwrite)
 
-    def copy_to(self, dest, overwrite=False):
+    def copy_to(
+            self,
+            dest,
+            overwrite=False,
+            pass_if_doesnt_exist=False
+    ):
+        if pass_if_doesnt_exist and not self: return
         dest = File(dest)
         assert self.exists
         assert self.abspath != dest.abspath
@@ -646,6 +658,10 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         foo = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(foo)
         return foo
+    def coffee2js(self):
+        assert self.ext == 'coffee'
+        eshell(f'/usr/local/bin/coffee --map -b --compile "{self.abspath}"')
+        return self.resrepext('js')
 
 
 
@@ -671,7 +687,15 @@ class Folder(File):
         from mlib.web.js import JS
         from mlib.web.css import CSS
         self[f'{htmlDoc.name}.html'].write(
-            htmlmin.minify(htmlDoc.getCode(resource_root, resource_root_rel, force_fix_to_abs), remove_empty_space=True)
+
+
+            htmlDoc.getCode(resource_root, resource_root_rel, force_fix_to_abs)
+
+            #  quotes in event handlers get converted and break them... cant find option to disable this...
+            # htmlmin.minify(
+            #     htmlDoc.getCode(resource_root, resource_root_rel, force_fix_to_abs),
+            #     remove_empty_space=True,
+            # )
         )
 
         css = CSS(htmlDoc.stylesheet)
@@ -684,10 +708,11 @@ class Folder(File):
         # lesscpy.compile(f.abspath, minify=True),
         # )
 
-        mlibjs = File(inspect.getfile(JS)).parent['mlib.js'].read()
-        platformjs = File(inspect.getfile(JS)).parent['platform.js'].read()
-        self['mlib.js'].write(JS(mlibjs, onload=False).output())
-        self['platform.js'].write(JS(platformjs, onload=False).output())
+        for jf in htmlDoc.javascript_files:
+            import mlib.web.html
+            file = File(mlib.web.html.__file__).parent[jf]
+            self[file.name_pre_ext + '.js'].write(JS(file, onload=False).output())
+
 
 
 class Temp(File):

@@ -5,27 +5,29 @@ import os
 
 from mlib.boot.dicts import CaseInsensitiveDict
 from mlib.boot.lang import isinstsafe, isstr, listkeys, isdictsafe, isblankstr, is_non_str_itr
-from mlib.boot.mlog import err
+from mlib.boot.mlog import err, warn
 from mlib.boot.stream import listitems, listmap
 from mlib.file import File
 from mlib.inspect import all_subclasses
 from mlib.str import merge_overlapping
-from mlib.web.css import DARK_CSS
+from mlib.web.css import DARK_CSS, TABS_CSS
 from mlib.web.js import JS
+from mlib.web.soup import soup
 
 class HTMLPage:
     def __init__(
             self,
             name,
             *children,
-            stylesheet=DARK_CSS,
+            stylesheet=DARK_CSS + "\n" + TABS_CSS,
             style='',
             js='',
             show=False,
             jQuery=True,
             bodyStyle=None,
             bodyAttributes=None,
-            identified=None
+            identified=None,
+            CDNs=()
     ):
         if identified is None: identified = {}
         if bodyAttributes is None: bodyAttributes = {}
@@ -40,12 +42,47 @@ class HTMLPage:
         self.bodyStyle = bodyStyle
         self.bodyAttributes = bodyAttributes
         self.identified = identified
+        self.CDNs = CDNs
+        self._tab = None
+        self._tabpane = None
+        self._tabcontent_container = None
+        self.javascript_files = ['platform.js', 'mlib.coffee', 'mplotly.coffee']
 
 
 
     def prepend(self, child): self.children.insert(0, child)
     def add(self, child):
         self.children.append(child)
+
+
+    def addTab(self, name, content):
+        if self._tab is None:
+            self._tabpane = Div(
+                **{'class': 'tabpane'}
+            )
+            self._tab = Tab(
+                **{'class': 'tab'}
+            )
+            self._tabcontent_container = Div(
+                **{'class': 'tabcontent_container'}
+            )
+            self._tabpane += self._tab
+            self._tabpane += self._tabcontent_container
+            self += self._tabpane
+        self._tab += HTMLButton(
+            name,
+            **{
+                'class'  : 'tablinks',
+                'onclick': f'openTab(event,\'{name}\')'  # strs must be single quoted
+            }
+        )
+        self._tabcontent_container += Div(
+            content,
+            id=name,
+            **{'class': 'tabcontent', 'style': "display:none;"}
+        )
+
+
 
     def __iadd__(self, other):
         if is_non_str_itr(other):
@@ -84,14 +121,17 @@ class HTMLPage:
                     href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css")
             ])
 
+        for cdn in self.CDNs:
+            head_objs.append(ExternalScript(cdn))
+
         # head_objs.append(ExternalScript(
         # Blocked loading mixed active content
         #     src='http://cdn.jsdelivr.net/gh/bestiejs/platform.js/platform.js',
         # ))
+
         head_objs.extend(
+            listmap(lambda x: ExternalScript(src=x.replace('.coffee', '.js')), self.javascript_files) +
             [
-                ExternalScript(src='platform.js'),
-                ExternalScript(src='mlib.js'),
                 JScript(JS(self.js))
             ]
         )
@@ -133,7 +173,8 @@ class HTMLObject(ABC):
         a = ''
         for k, v in self.attributes.items():
             if k in ['onclick', 'onchange', 'onmouseover', 'onmouseout', 'onkeydown', 'onload']:
-                err('JS pipeline not prepared for html even handlers')
+                # not sure why i cared so much to make this an err before
+                warn('JS pipeline not prepared for html even handlers')
 
             if v is None:
                 a += f' {k}'
@@ -155,6 +196,8 @@ class HTMLObject(ABC):
     @staticmethod
     @abstractmethod
     def closingTag(): pass
+    def soup(self):
+        return soup(self.getCode(None, None))
     def getCode(self, root_path, resource_root_rel, force_fix_to_abs=False):
         return f'<{self.tag}{self._attributes(root_path, resource_root_rel, force_fix_to_abs)}>{self.contents(root_path, resource_root_rel, force_fix_to_abs)}{self.closingTag()}'
 class HTMLParent(HTMLObject, ABC):
@@ -374,3 +417,6 @@ def html_tag_map():
         if not inspect.isabstract(sub):
             HTML_TAG_MAP[sub.tag] = sub
     return HTML_TAG_MAP
+
+
+class Tab(HTMLParent): tag = 'tab'

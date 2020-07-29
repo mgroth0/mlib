@@ -89,8 +89,15 @@ Object.defineProperty(Element::, "disappear", {
             @.style.display = 'none'
     writable: true
 })
+Object.defineProperty(Element::, "setFadeInterval", {
+    value   : (interval) ->
+        @fadeInterval = interval
+    writable: true
+})
 Object.defineProperty(Element::, "fade", {
-    value   : (onFinish,just_hide) ->
+    value   : (onFinish, just_hide) ->
+        if !@fadeInterval?
+            @fadeInterval=50
         if (!@fade_timer?) and @style.display != 'none' and @style.visibility != 'hidden'
             if @unfadetimer?
                 clearInterval(@unfadetimer)
@@ -109,14 +116,14 @@ Object.defineProperty(Element::, "fade", {
                     if onFinish?
                         onFinish()
                 @op -= Math.max(@op * 0.1, 0)
-            , 50)
+            , @fadeInterval)
         else
             if onFinish?
                 onFinish()
     writable: true
 })
 Object.defineProperty(Element::, "appear", {
-    value   : (just_display,but_hidden)->
+    value   : (just_display, but_hidden)->
         if !just_display? or not just_display
             if @fade_timer?
                 clearInterval(@fade_timer)
@@ -137,6 +144,8 @@ Object.defineProperty(Element::, "appear", {
 })
 Object.defineProperty(Element::, "unfade", {
     value   : (onFinish) ->
+        if !@fadeInterval?
+            @fadeInterval=50
         if (!@unfadetimer?) and (@fade_timer? or @.style.display == 'none' or @.style.visibility == 'hidden')
             if @fade_timer?
                 clearInterval(@fade_timer)
@@ -153,16 +162,16 @@ Object.defineProperty(Element::, "unfade", {
                     if onFinish?
                         onFinish()
                 @op += Math.max(Math.min(@op * 0.1, 1), 0.01)
-            , 50)
+            , @fadeInterval)
         else
             if onFinish?
                 onFinish()
     writable: true
 })
 Object.defineProperty(Element::, "op", {
-    get     : () ->
+    get: () ->
         Number(@.style.opacity)
-    set     : (op) ->
+    set: (op) ->
         @.style.opacity = op
         @.style.filter = 'alpha(opacity=' + op * 100 + ")"
 # writable: true
@@ -216,17 +225,30 @@ path_join = (...args) ->
         if i == 0 then part.trim().replace(/[\/]*$/g, '') else part.trim().replace(/(^[\/]*|[\/]*$)/g, '')).filter((x) -> x.length).join('/')
 
 
-log = (s) -> console.log(s)
+tic = Date.now()
+retic = () ->
+    tic = Date.now()
+log = (s) ->
+    toc = Date.now()
+    console.log("[#{(toc-tic)/1000}]#{s}")
+
 bool = (s) -> JSON.parse s.toLowerCase()
+
+keydown = (f) ->
+    $(document).keydown (e) ->
+#        log("#{e.key} down")
+        f(e)
 keyup = (f) ->
     $(document).keyup (e) ->
-        log("#{e.key} pressed")
+#        log("#{e.key} up")
         f(e)
 
 Key = (keyCode, str) -> {keyCode, str}
 SPACE_BAR = Key(32, "Space Bar")
 RIGHT_ARROW = Key(39, "Right Arrow Key")
 LEFT_ARROW = Key(37, "Left Arrow Key")
+UP_ARROW = Key(38, "Right Arrow Key")
+DOWN_ARROW = Key(40, "Left Arrow Key")
 #noinspection JSUnusedGlobalSymbols
 just_email_href_stuff = ->
 #  id.link.href = "#{id.link.href}body=#{encodeURI(template)}"
@@ -255,11 +277,11 @@ merge = (xs...) ->
 #        handler(JSON.parse(t).ip)
 #    )
 _parse_ip = (raw) ->
-    raw.split('\n').filter((l) -> l.startsWith('ip'))[0].replace('ip=','')
+    raw.split('\n').filter((l) -> l.startsWith('ip'))[0].replace('ip=', '')
 myIP = ->
     _parse_ip(GET('https://www.cloudflare.com/cdn-cgi/trace'))
 myIP_async = (handler) ->
-    GET_async('https://www.cloudflare.com/cdn-cgi/trace',(t)->
+    GET_async('https://www.cloudflare.com/cdn-cgi/trace', (t)->
         handler(_parse_ip(t))
     )
 
@@ -275,3 +297,82 @@ center_str = (str, marker) ->
         str.replace(marker, '&nbsp')
     else
         str.replace(marker, '')
+
+appendToBody = (e) ->
+    tag.body.appendChild(e)
+
+E = new Proxy({}, {
+    get: (target, name) ->
+        (my_inner) ->
+            e = document.createElement(name)
+            e.innerHTML = my_inner
+            e
+})
+
+Object.defineProperty(String::, "afterFirst", {
+    value   : `function afterFirst(c) {
+        return this.substring(this.indexOf(c)+1)
+    }`
+    writable: true
+})
+
+
+openTab = (evt, tabName) ->
+    tabcontent = document.getElementsByClassName("tabcontent")
+    for content in tabcontent
+        content.setFadeInterval(5)
+#        content.fade()
+        content.disappear()
+
+    tablinks = document.getElementsByClassName("tablinks")
+    for link in tablinks 
+        link.className = link.className.replace(" active", "")
+
+    evt.currentTarget.className += " active"
+#    id[tabName].unfade()
+    id[tabName].appear()
+    for c in id[tabName].children[0].children
+        if c.children.length > 0 and c.children[0].className.includes('plotly-graph-div')
+#            hopefully this will fix the weird bug that causes these plots to regularly hide thier lines
+            Plotly.relayout(c.children[0], {
+#                'xaxis.autorange': true,
+#                'yaxis.autorange': true
+            });
+#            and c.children[0].className?
+
+openSocketClient = ({url,onopen,onmessage,onclose}) ->
+    ws = new WebSocket(url)
+    ws.onopen = -> onopen.call(ws)
+    ws.onmessage = onmessage
+    ws.onclose = onclose
+    ws
+
+
+autoYRange = (ar) ->
+    mn = Math.min(ar)
+    mx = Math.max(ar)
+    dif = mx - mn
+    ten = dif * 0.1
+    mn = mn - ten
+    mx = mx + ten
+    return [mn, mx]
+
+Object.defineProperty(String::, "shorten", {
+    value   : `function shorten(maxlen) {
+        if (this.length <= maxlen) {return this}
+        else {return this.slice(0,maxlen) + ' ... '}
+    }`
+    writable: true
+})
+
+Object.defineProperty(Object::, "def", {
+    value   : `function def(functions) {
+        for (fun_name in functions) {
+            Object.defineProperty(this,fun_name,{
+                value: functions[fun_name]
+            })
+        }
+        return this
+    }`
+})
+

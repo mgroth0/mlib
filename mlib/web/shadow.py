@@ -1,20 +1,28 @@
+from abc import abstractmethod, ABC
+import asyncio
 from dataclasses import dataclass
+from queue import Queue
 
-from bs4 import BeautifulSoup
 import matplotlib
 from pygments import highlight
+from websockets import ConnectionClosedError, ConnectionClosedOK
 
 from mlib.bib import bib2html
 from mlib.boot.lang import isstr, enum, listkeys, isblank
-from mlib.boot.mlog import warn
+from mlib.boot.mlog import warn, log
 from mlib.boot.stream import listmap, __, arr, listfilt
 from mlib.fig.PlotData import makefig, PlotData
 from mlib.file import File, Folder, pwdf
 from mlib.inspect import caller_file, PythonLine, caller_lines
 from mlib.proj.struct import Project
 from mlib.pygments import LEXER, FORMATTER
+from mlib.socket import SocketServer
+from mlib.term import log_invokation
+from mlib.web.js import JS
+from mlib.web.shadow_lib import FUN_LINKS, SKIPPED_SOURCE, ShadowIndex
+from mlib.web.soup import soup
 from mlib.web.webpage import write_index_webpage, write_sub_webpage
-from mlib.web.html import HTMLPage, Div, Hyperlink, Br, HTMLImage, H4, HR, Span, H3, html_tag_map
+from mlib.web.html import HTMLPage, Div, Hyperlink, Br, HTMLImage, H4, HR, Span, H3, html_tag_map, JScript
 
 SHOW_INDEX = False
 SHADOW_ONLINE = False
@@ -22,7 +30,82 @@ SHADOW_CACHE = Folder('_cache/shadow')
 _tag_map = html_tag_map()
 shadow_instances = []
 import matplotlib.pyplot as plt
+
+enabled = True
+
+_RUNTIME_PAGES = pwdf()['_runtime_pages']
+
+
+# noinspection PyMethodFirstArgAssignment
+class Server(ABC):
+    def __init__(self):
+        self.queue = Queue(maxsize=-1)
+        self.queue_cache = []
+        server = SocketServer('localhost', 9998, self._relayQueue)
+        server.start()
+
+    async def _relayQueue(self, websocket, path):
+        while True:
+            try:
+                if not self.queue.empty():
+                    s = self.queue.get()
+                    await websocket.send(s)
+                    log('sent queue item')
+                async for message in websocket:
+                    log(f'message received: {message}')
+                    if message == 'GET_ALL':
+                        for s in self.queue_cache:
+                            await websocket.send(s)
+                        log('sent queue cache')
+                    elif message.startswith('GET_UPDATE'):
+                        update_arg = message.replace('GET_UPDATE:', '')
+                        up = self.update(update_arg)
+                        if up is not None:
+                            await websocket.send('UPDATE:' + self.update(update_arg))
+                            log('sent update')
+                        else:
+                            log('no update to send')
+                await asyncio.sleep(0.1)
+            except (ConnectionClosedError, ConnectionClosedOK) as e:
+                warn(str(e))
+                return
+
+    @abstractmethod
+    def update(self, update_arg): pass
+
+
+    def fig(self, fig_html): self += f'PLOT:{fig_html}'
+
+    @log_invokation
+    def text(self, s: str): self += f'TEXT:{s}'
+
+    def __iadd__(self, other):
+        self.queue_cache.append(other)
+        self.queue.put(other)
+        return self
+
 class Shadow(HTMLPage):
+
+    def add_signal_manscan(self):
+        cs = File(__file__).parent['signal_manscan.coffee']
+        self.add(JScript(JS(cs)))
+
+    def build_runtime_page(
+            self,
+            name,
+            open=False
+    ):
+        root = _RUNTIME_PAGES[name]
+        write_index_webpage(
+            self,
+            root=root,
+            resource_root_file=root['resources'],
+            upload_resources=False
+        )
+        if open:
+            root['index.html'].open()
+        return root
+
 
     def __getattr__(self, item):
         call_lines = caller_lines()
@@ -113,10 +196,13 @@ class Shadow(HTMLPage):
         self.write_source_buffer()
         self.div += other
         self.catch_up(call_lines[-1] + 1, skip=True)
+        return self
 
     def __iadd__(self, other):
-        self._add(other, caller_lines())
-        return self
+        if enabled:
+            return self._add(other, caller_lines())
+        else:
+            return super().__iadd__(other)
 
     def __init__(
             self,
@@ -126,23 +212,18 @@ class Shadow(HTMLPage):
             include_index_link=True,
             bib=None,
             includes=(),
+            build_at_end=True,
             **kwargs
     ):
         self._called_fig_lines = []
         self.include_index_link = include_index_link
-        shadow_instances.append(self)
         self.includes = includes
         self.next_im_idx = 0
         self.bib = bib
         if self.bib is not None:
             self.bib = File(bib).load()
-
         self._empty_bib = True
-
-        self.bibdiv = Div(
-
-        )
-
+        self.bibdiv = Div()
         self.analysis = analysis
         mod_file = File(mod_file) if mod_file else caller_file()
         self.mod_file = mod_file
@@ -151,11 +232,9 @@ class Shadow(HTMLPage):
             self.rootpath = pwdf().name
         else:
             self.rootpath = mod_file.parent[mod_file.name.replace('.py', '')].rel_to(pwdf())
-
         self.fig_folder = Folder(Project.FIGS_FOLDER[
                                      mod_file.rel_to(pwdf())
                                  ]).mkdirs()
-
         self.sr = self.source_reader()
         self.source_buffer = []
         self.div = Div()
@@ -167,23 +246,11 @@ class Shadow(HTMLPage):
             'index',
             self.div,
             show=show,
-            js='''
-
-
-var links = document.getElementsByTagName('a')
-for (link of links) {
-    if (link.getAttribute("href").startsWith("#")) {
-        link.onclick = (e) => {
-            link.scrollIntoView()
-            return false
-        }   
-    }
-} 
-
-
-            ''',
+            js=File(__file__).parent['shadow.js'].read(),
             **kwargs
         )
+        if build_at_end:
+            shadow_instances.append(self)
 
 
 
@@ -260,7 +327,7 @@ for (link of links) {
         # elif self.started and line.startssingledocstr:
         #     self.in_docstring = True
         #     return HTML_P(line.replace("'''", "", 1).strip())
-        elif self.started and line.strip() not in _SKIPPED_SOURCE:
+        elif self.started and line.strip() not in SKIPPED_SOURCE:
             return self.ToHighlight(line)
 
     def format_comment(self, contents):
@@ -289,10 +356,10 @@ for (link of links) {
             splt = s.split(to_replace)
             s = splt[1] if len(splt) > 1 else ''
             if before != '':
-                new_contents += [BeautifulSoup(Span(before).getCode(None, None), 'html.parser').contents[0]]
-            new_contents += [BeautifulSoup(link.getCode(None, None), 'html.parser').contents[0]]
+                new_contents += [Span(before).soup().contents[0]]
+            new_contents += [link.soup().contents[0]]
         if s != '':
-            new_contents += [BeautifulSoup(Span(s).getCode(None, None), 'html.parser').contents[0]]
+            new_contents += [Span(s).soup().contents[0]]
         return new_contents
     def source_reader(self):
         lines_of_code = File(self.mod_file.abspath).read().split('\n')
@@ -310,19 +377,19 @@ for (link of links) {
                 FORMATTER
             )
 
-            soup = BeautifulSoup(source_div, 'html.parser')
+            bsoup = soup(source_div)
 
-            for span in soup.find_all('span'):
+            for span in bsoup.find_all('span'):
                 if 'style' in span.attrs and span.attrs['style'] == 'color: #353535':  # is comment
                     # add in-text citations
                     span.contents = self.format_comment(span.contents)
 
-                if span.string in _FUN_LINKS:
-                    span.contents = BeautifulSoup(Hyperlink(
-                        span.string, _FUN_LINKS[span.string], target='_blank'
-                    ).getCode(None, None), 'html.parser')
+                if span.string in FUN_LINKS:
+                    span.contents = Hyperlink(
+                        span.string, FUN_LINKS[span.string], target='_blank'
+                    ).soup()
 
-            self.div += soup.prettify()
+            self.div += bsoup.prettify()
         self.source_buffer.clear()
 
     def catch_up(self, stop_at=None, skip=False):
@@ -343,26 +410,6 @@ for (link of links) {
 
         if stop_at is None and len(self.source_buffer) > 0 and not skip:
             self.write_source_buffer()
-
-
-
-
-
-
-
-
-
-
-def ShadowIndex(*pages):
-    return HTMLPage(
-        'index',
-        *[Hyperlink(page.rootpath, f"{page.rootpath}/{page.name}.html") for page in pages],
-        HTMLImage(Project.PYCALL_FILE, fix_abs_path=True),
-        HTMLImage(Project.PYDEPS_OUTPUT, fix_abs_path=True)
-    )
-
-
-
 
 def build_docs():
     Project.SHADOW_RESOURCES.deleteIfExists()
@@ -439,46 +486,21 @@ def build_docs():
             WOLFRAM=SHADOW_ONLINE,
             DEV=False,
         )
-    if Project.RESOURCES_FOLDER:
-        Project.RESOURCES_FOLDER.copy_to(
-            Project.DOCS_FOLDER.edition_local[
-                Project.RESOURCES_FOLDER.rel_to(Project.DOCS_FOLDER)
-            ]
-        )
+    Project.RESOURCES_FOLDER.copy_to(
+        Project.DOCS_FOLDER.edition_local[
+            Project.RESOURCES_FOLDER.rel_to(Project.DOCS_FOLDER)
+        ],
+        pass_if_doesnt_exist=True
+    )
     if Project.SHADOW_RESOURCES:
         assert not Project.RESOURCES_FOLDER
         Project.SHADOW_RESOURCES.copy_to(
             Project.DOCS_FOLDER.edition_local[
                 Project.RESOURCES_FOLDER.rel_to(Project.DOCS_FOLDER)
-            ]
+            ],
         )
         Project.SHADOW_RESOURCES.copy_to(
             Project.DOCS_FOLDER[
                 Project.RESOURCES_FOLDER.rel_to(Project.DOCS_FOLDER)
             ]
         )
-
-
-
-_SKIPPED_SOURCE = [
-    '@log_invokation',
-    'global DOC',
-    '@staticmethod'
-]
-
-
-# doesnt work because scipy exports functions from parent modules (scipy.signal instea of the real module, scipy.signal.signaltools)
-# def scipy_doc_url(fun): return f'https://docs.scipy.org/doc/scipy/reference/generated/{mn(fun)}.{fun.__name__}.html'
-
-def scipy_doc_url(funname): return f'https://docs.scipy.org/doc/scipy/reference/generated/{funname}.html'
-
-_FUN_LINKS = {
-    'bilinear': 'https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.bilinear.html'
-}
-_FUN_LINKS.update(
-    {fun.split('.')[-1]: scipy_doc_url(fun) for fun in [
-        'scipy.signal.filtfilt',
-        'scipy.signal.lfilter',
-        'scipy.signal.butter'
-    ]}
-)

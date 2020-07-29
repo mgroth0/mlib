@@ -1,4 +1,5 @@
 import asyncio
+from functools import wraps
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
 import threading
@@ -57,7 +58,21 @@ def testInPools(f, li, af,
 def run_in_daemon(target):
     threading.Thread(target=target, daemon=True).start()
 
-def run_in_thread(target, **kwargs):
-    t = threading.Thread(target=target, **kwargs)
+def run_in_thread(
+        target,
+        args=(),
+        **kwargs
+):
+    t = threading.Thread(
+        target=target,
+        args=args,
+        **kwargs
+    )
     t.start()
     return t
+
+def threaded(funn):
+    @wraps(funn)
+    def f(*args):
+        run_in_thread(funn, args=args)
+    return f

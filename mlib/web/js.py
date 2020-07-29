@@ -4,7 +4,7 @@ import os
 from mlib.boot.lang import isinstsafe
 from mlib.boot.stream import arr, enum
 from mlib.file import File, Temp
-from mlib.shell import shell
+from mlib.shell import shell, eshell
 
 # TODO: should really inherit a common base class with CSS
 class JS:
@@ -13,7 +13,8 @@ class JS:
         if os.path.isfile(js):
             js = File(js)
         if isinstsafe(js, File):
-            js = File(js.abspath.replace('.coffee', '.js'))
+            if js.ext == 'coffee':
+                js = js.coffee2js()
             js = js.read()
         self._raw = js
         self._onload = onload

@@ -283,7 +283,7 @@ class MakeFigsBackend(ABC):
                         listpoints += [[[0, i], [gl, i]]]
                 listpoints = arr(listpoints)
                 for sub in listpoints:
-                    cls.ax.plot(sub[:, 0], sub[:, 1], 'y--')
+                    cls.ax.line(sub[:, 0], sub[:, 1], 'y--')
             # rasters start from the bottom but I want this to start from the top
             if 'Wolf' in cls.__name__:
                 rast = OneWayOfShowingARaster(Raster(reversed(data)), gl)
@@ -466,7 +466,7 @@ class MPLFigsBackend(MakeFigsBackend):
                 facecolor='black'
             )
             cls.ax = cls.fig.add_subplot(111, facecolor='black')
-        cls.ax.plot(fd.x, fd.y, color=cls.color(fd.item_colors))
+        cls.ax.line(fd.x, fd.y, color=cls.color(fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color='w')
         c = 'w'
