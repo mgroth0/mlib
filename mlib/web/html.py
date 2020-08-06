@@ -278,6 +278,9 @@ class DataCell(HTMLParent):
 class HTML_Pre(HTMLParent):
     tag = 'pre'
 
+class HTML_Del(HTMLParent):
+    tag = 'del'
+
 class HR(HTMLParent): tag = 'hr'
 
 class HTML_P(HTMLParent):

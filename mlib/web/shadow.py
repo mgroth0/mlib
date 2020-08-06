@@ -1,7 +1,9 @@
 from abc import abstractmethod, ABC
 import asyncio
 from dataclasses import dataclass
+import json
 from queue import Queue
+from time import time
 
 import matplotlib
 from pygments import highlight
@@ -22,7 +24,7 @@ from mlib.web.js import JS
 from mlib.web.shadow_lib import FUN_LINKS, SKIPPED_SOURCE, ShadowIndex
 from mlib.web.soup import soup
 from mlib.web.webpage import write_index_webpage, write_sub_webpage
-from mlib.web.html import HTMLPage, Div, Hyperlink, Br, HTMLImage, H4, HR, Span, H3, html_tag_map, JScript
+from mlib.web.html import HTMLPage, Div, Hyperlink, Br, HTMLImage, H4, HR, Span, H3, html_tag_map, JScript, HTMLObject, HTMLButton
 
 SHOW_INDEX = False
 SHADOW_ONLINE = False
@@ -43,6 +45,7 @@ class Server(ABC):
         self.queue_cache = []
         server = SocketServer('localhost', 9998, self._relayQueue)
         server.start()
+        self.button_handlers = {}
 
     async def _relayQueue(self, websocket, path):
         while True:
@@ -61,28 +64,58 @@ class Server(ABC):
                         update_arg = message.replace('GET_UPDATE:', '')
                         up = self.update(update_arg)
                         if up is not None:
-                            await websocket.send('UPDATE:' + self.update(update_arg))
+                            await websocket.send(
+                                self.message(dict(type='UPDATE', value=up))
+                            )
                             log('sent update')
                         else:
                             log('no update to send')
+                    elif message.startswith('BUTTON'):
+                        message = json.loads(message.split(':', 1)[1])
+                        handler = self.button_handlers[message['name']]
+                        handler(message['state'])
+                        up = self.update(message['state']['pointer'], force=True)
+                        await websocket.send(
+                            self.message(dict(type='UPDATE', value=up))
+                        )
                 await asyncio.sleep(0.1)
             except (ConnectionClosedError, ConnectionClosedOK) as e:
                 warn(str(e))
                 return
 
+
     @abstractmethod
-    def update(self, update_arg): pass
+    def update(self, update_arg, force=False): pass
 
 
-    def fig(self, fig_html): self += f'PLOT:{fig_html}'
+    def fig(self, fig_html):
+        self += dict(type='PLOT', value=fig_html)
+
+    def html(self, htm):
+        if isinstance(htm, HTMLObject):
+            htm = htm.getCode(None, None)
+        self += dict(type='HTML', value=htm)
+
+    def button(self, name, fun):
+        self += dict(
+            type='BUTTON',
+            html=HTMLButton(name).getCode(None, None)
+        )
+
+        self.button_handlers[name] = fun
 
     @log_invokation
-    def text(self, s: str): self += f'TEXT:{s}'
+    def text(self, s: str): self += dict(type='TEXT', value=s)
 
-    def __iadd__(self, other):
-        self.queue_cache.append(other)
-        self.queue.put(other)
+    def __iadd__(self, messageDict):
+        m = self.message(messageDict)
+        self.queue_cache.append(m)
+        self.queue.put(m)
         return self
+
+    def message(self, messageDict):
+        messageDict['id'] = time()
+        return json.dumps(messageDict)
 
 class Shadow(HTMLPage):
 

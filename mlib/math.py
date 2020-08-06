@@ -376,3 +376,7 @@ def autoYRange(ar):
     mn = mn - ten
     mx = mx + ten
     return mn, mx
+
+def safefloat(n):
+    if n is None: return None
+    return float(n)

@@ -5,6 +5,7 @@ from typing import Union
 
 from mlib.boot.lang import isinstsafe, isdictsafe, isstr
 from mlib.boot.mlog import err
+from mlib.boot.stream import listitems
 
 
 class DefaultMutableMapping(MutableMapping, ABC):
@@ -120,3 +121,8 @@ class CaseInsensitiveDict(dict):
         for k in list(self.keys()):
             v = super().pop(k)
             self.__setitem__(k, v)
+
+def set_defaults(d, **kwargs):
+    for k, v in listitems(kwargs):
+        if k not in d:
+            d[k] = v

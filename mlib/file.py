@@ -1,6 +1,6 @@
 import atexit
+from dataclasses import dataclass
 from glob import glob
-import inspect
 import json
 import os
 from os.path import expanduser
@@ -11,15 +11,14 @@ import shutil
 from typing import MutableMapping
 
 import matplotlib.image as mpimg
-import htmlmin
 import imageio
 import numpy as np
 from scipy.io import loadmat, savemat
 import yaml
 
 from mlib.boot import mlog, log
-from mlib.boot.dicts import DefaultMutableMapping
-from mlib.boot.lang import notblank, isinstsafe, listkeys, pwd
+from mlib.boot.dicts import ProxyDictRoot, RecursiveSubDictProxy
+from mlib.boot.lang import notblank, isinstsafe, listkeys, pwd, isdictsafe, ismac
 from mlib.boot.mlog import Muffleable, warn, err
 from mlib.boot.stream import arrmap, listfilt, __, isempty, arr, sort
 from mlib.obj import SimpleObject
@@ -37,6 +36,7 @@ BASE_WOLFRAM_URL = 'https://www.wolframcloud.com/obj/mjgroth'
 def url(path): return File(path).url
 def read(path): return File(path).read()
 class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
+    def rproxy(self): return RecursiveFileDictProxy(self)
     __npitr__ = False
     def quiet(self, quiet=True):
         self.default_quiet = quiet
@@ -958,3 +958,18 @@ def mypwd(remote=None):
 def mkdir(name):
     from pathlib import Path
     Path(name).mkdir(parents=True, exist_ok=True)
+
+
+class RecursiveFileDictProxy(ProxyDictRoot):
+    def __init__(self, file: File):
+        super().__init__(file)
+    def __setitem__(self, k, v) -> None:
+        self._d[k] = v
+    def __delitem__(self, v) -> None:
+        del self._d[v]
+    def __getitem__(self, k):
+        v = self._d[k]
+        if isdictsafe(v):
+            return RecursiveSubDictProxy(root_dict=self, key=k)
+        else:
+            return v

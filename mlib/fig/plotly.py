@@ -1,8 +1,7 @@
-from collections import Iterable
-
-from mlib.math import TimeSeries
 import plotly.graph_objs as go
 
+from mlib.boot.stream import listmap
+from mlib.math import TimeSeries
 from mlib.term import log_invokation
 
 
@@ -55,17 +54,21 @@ def line(
 def line_scatter(
         title,
         ts: TimeSeries,
-        tp: Iterable,
+        *tps,
         tp_ref=None,
         displayModeBar=False,
         staticPlot=True,
         line_args=None,
         fig_args=None,
-        layout=None
+        layout=None,
+        annotations=None
 ):
     if layout is None: layout = {}
     if fig_args is None: fig_args = {}
     if line_args is None: line_args = {}
+    if annotations is None: annotations = []
+
+    colors = (x for x in ['#0000B4', '#9FEB4C'])
 
     if tp_ref is None:
         tp_ref = ts
@@ -79,19 +82,20 @@ def line_scatter(
                 # shape='spline'
             )
         ),
-        go.Scatter(
+        *listmap(lambda tp: go.Scatter(
             x=tp_ref.t[tp],
             y=tp_ref.y[tp],
             mode='markers',
             marker=dict(
-                color='#0000B4',
+                color=next(colors),
                 size=20  # default 6
             )
-        )
+        ), tps)
     ]
     layout = go.Layout(
         template='plotly_dark',
         title=title,
+        annotations=annotations,
         # yaxis=dict(autorange=True),
         **layout
     )

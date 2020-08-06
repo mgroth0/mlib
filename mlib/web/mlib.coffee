@@ -97,7 +97,7 @@ Object.defineProperty(Element::, "setFadeInterval", {
 Object.defineProperty(Element::, "fade", {
     value   : (onFinish, just_hide) ->
         if !@fadeInterval?
-            @fadeInterval=50
+            @fadeInterval = 50
         if (!@fade_timer?) and @style.display != 'none' and @style.visibility != 'hidden'
             if @unfadetimer?
                 clearInterval(@unfadetimer)
@@ -145,7 +145,7 @@ Object.defineProperty(Element::, "appear", {
 Object.defineProperty(Element::, "unfade", {
     value   : (onFinish) ->
         if !@fadeInterval?
-            @fadeInterval=50
+            @fadeInterval = 50
         if (!@unfadetimer?) and (@fade_timer? or @.style.display == 'none' or @.style.visibility == 'hidden')
             if @fade_timer?
                 clearInterval(@fade_timer)
@@ -230,7 +230,7 @@ retic = () ->
     tic = Date.now()
 log = (s) ->
     toc = Date.now()
-    console.log("[#{(toc-tic)/1000}]#{s}")
+    console.log("[#{(toc - tic) / 1000}]#{s}")
 
 bool = (s) -> JSON.parse s.toLowerCase()
 
@@ -311,7 +311,13 @@ E = new Proxy({}, {
 
 Object.defineProperty(String::, "afterFirst", {
     value   : `function afterFirst(c) {
-        return this.substring(this.indexOf(c)+1)
+        return this.substring(this.indexOf(c) + 1)
+    }`
+    writable: true
+})
+Object.defineProperty(String::, "beforeFirst", {
+    value   : `function afterFirst(c) {
+        return this.substring(0, this.indexOf(c) + 1)
     }`
     writable: true
 })
@@ -321,15 +327,15 @@ openTab = (evt, tabName) ->
     tabcontent = document.getElementsByClassName("tabcontent")
     for content in tabcontent
         content.setFadeInterval(5)
-#        content.fade()
+        #        content.fade()
         content.disappear()
 
     tablinks = document.getElementsByClassName("tablinks")
-    for link in tablinks 
+    for link in tablinks
         link.className = link.className.replace(" active", "")
 
     evt.currentTarget.className += " active"
-#    id[tabName].unfade()
+    #    id[tabName].unfade()
     id[tabName].appear()
     for c in id[tabName].children[0].children
         if c.children.length > 0 and c.children[0].className.includes('plotly-graph-div')
@@ -340,7 +346,7 @@ openTab = (evt, tabName) ->
             });
 #            and c.children[0].className?
 
-openSocketClient = ({url,onopen,onmessage,onclose}) ->
+openSocketClient = ({url, onopen, onmessage, onclose}) ->
     ws = new WebSocket(url)
     ws.onopen = -> onopen.call(ws)
     ws.onmessage = onmessage
@@ -359,16 +365,15 @@ autoYRange = (ar) ->
 
 Object.defineProperty(String::, "shorten", {
     value   : `function shorten(maxlen) {
-        if (this.length <= maxlen) {return this}
-        else {return this.slice(0,maxlen) + ' ... '}
+        if (this.length <= maxlen) {return this} else {return this.slice(0, maxlen) + ' ... '}
     }`
     writable: true
 })
 
 Object.defineProperty(Object::, "def", {
-    value   : `function def(functions) {
+    value: `function def(functions) {
         for (fun_name in functions) {
-            Object.defineProperty(this,fun_name,{
+            Object.defineProperty(this, fun_name, {
                 value: functions[fun_name]
             })
         }
@@ -376,3 +381,23 @@ Object.defineProperty(Object::, "def", {
     }`
 })
 
+log_invokation = (f) ->
+    ff = (...args) ->
+        s = f.name + '()'
+        log("Invoking #{s}...")
+        r = f(...args)
+        log("Finished #{s}!")
+        return r
+    ff.name = f.name
+    return ff
+
+extend = (object, properties) ->
+    for key, val of properties
+        object[key] = val
+    object
+
+merge = (...objects) ->
+    r = {}
+    for o in objects
+        extend(r, o)
+    r
