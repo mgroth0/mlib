@@ -104,7 +104,10 @@ class ExpectShell(AbstractShell):
         line = ''
         while True:
             try:
-                c = utf_decode(self.p.read_nonblocking(size=1, timeout=timeout))
+                try:
+                    c = utf_decode(self.p.read_nonblocking(size=1, timeout=timeout))
+                except UnicodeDecodeError as e:
+                    c = str(e)
                 if c == '\n': return line
                 else: line += c
             except TIMEOUT: return None
