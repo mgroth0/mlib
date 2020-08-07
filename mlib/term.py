@@ -61,7 +61,7 @@ class MagicTermLineLogger(MagicTermLine, SimpleObject):
         self.killed = True
 
 class Progress(MagicTermLine):
-    PROGRESS_DISABLED = False
+    PROGRESS_DISABLED = True
     _instances = []
     def __init__(self, goal, verb='doing', pnoun='things'):
         from mlib.boot import log
