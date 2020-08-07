@@ -141,13 +141,16 @@ def logr(thing):
 
 _last_stacker = None
 LOG_FILE = None
+
+ERASE = False
+
 def log(ss, *args, silent=False, ref=0, stacker=None):
     global _last_stacker
     line, file_line, v = get_log_info(ss, *args, ref=ref)
 
     if not silent:
         for p in Progress._instances:
-            if not p.DISABLED:
+            if ERASE and (not p.DISABLED):
                 print(MagicTermLine.ERASE)
         for p in Progress._instances:
             if not p.DISABLED:
