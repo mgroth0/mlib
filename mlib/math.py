@@ -380,3 +380,15 @@ def autoYRange(ar):
 def safefloat(n):
     if n is None: return None
     return float(n)
+
+def safemin(li):
+    if len(li) == 0:
+        return None
+    else:
+        return min(li)
+
+def safemax(li):
+    if len(li) == 0:
+        return None
+    else:
+        return max(li)
