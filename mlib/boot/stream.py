@@ -494,7 +494,12 @@ def maxindex(li, num=1):
         return np.argmax(li)
 
 
-
+def minindex(li, num=1):
+    if num > 1:
+        raise Exception('not ready')
+        # return tuple(np.argpartition(li, -num)[-num:])
+    else:
+        return np.argmin(li)
 
 
 def atleast1(n): return max(n, 1)
