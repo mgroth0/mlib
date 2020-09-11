@@ -36,7 +36,6 @@ class MakeFigsBackend(ABC):
             if makes:
                 log('showing...')
                 will_maybe_do_more += [cls.export_fd(makes, fd, overwrite)]
-        # breakpoint()
         return will_maybe_do_more
     @classmethod
     @abstractmethod
@@ -44,7 +43,6 @@ class MakeFigsBackend(ABC):
 
     @classmethod
     def addLayer(cls, fd):
-        # breakpoint()
         try:
             rrr = cls.__getattribute__(
                 cls, fd.item_type
@@ -53,7 +51,6 @@ class MakeFigsBackend(ABC):
             rrr = cls.__getattribute__(
                 MakeFigsBackend, fd.item_type
             ).__get__(cls, cls)(fd)
-        # breakpoint()
         return rrr
 
     @classmethod
@@ -131,18 +128,15 @@ class MakeFigsBackend(ABC):
 
 
                             # except:
-                            #     breakpoint()
                         else:
                             b = dat
                         if show_nums:
                             data[rrr][c] = sigfig(dat, 2)
                         else:
                             # data[rrr][c] = [0, 0, b]
-                            # breakpoint()
-                            try:
-                                data[rrr][c] = JET[round(b * 256) - 1].tolist()
-                            except:
-                                breakpoint()
+                            # try:
+                            data[rrr][c] = JET[round(b * 256) - 1].tolist()
+                            # except:
 
                         if (fd.headers_included and rrr > 0 and c > 0) or not fd.headers_included:
                             backgrounds[rrr][c] = cls.color(0, 0, b)
@@ -331,7 +325,6 @@ class MakeFigsBackend(ABC):
                         listpoints += [[[i, - 0.5], [i, gl - 0.5]]]
                         listpoints += [[[- 0.5, i], [gl - 0.5, i]]]
                 listpoints = arr(listpoints)
-                # breakpoint()
                 for sub in listpoints:
                     # cls.ax.line(sub[:, 0], sub[:, 1], 'y--')
                     # cls.ax.plot(sub[:, 0], sub[:, 1], 'y--')
@@ -415,7 +408,6 @@ class MakeFigsBackend(ABC):
                     )
                 ]
                 rrr = Graphics(insets)
-                # breakpoint()
             else:
                 title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size / 3)
                 plt.setp(title_obj, color=text_color)
@@ -446,7 +438,6 @@ class MakeFigsBackend(ABC):
                 # cls.ax.xticks(rotation=90)
                 # cax.set_yticks(arr(yt_mpl_t) * gl)
                 # cax.set_yticklabels(yt_mpl_l)
-        # breakpoint()
         if wolf:
             return rrr
 
@@ -467,7 +458,8 @@ class MakeFigsBackend(ABC):
     def scatter(cls, fd): pass
     @classmethod
     @abstractmethod
-    def bar(cls, fd): pass
+    def bar(cls, fd):
+        pass
 
 
 # @singleton
@@ -529,7 +521,7 @@ class MPLFigsBackend(MakeFigsBackend):
                 cls.ax = cls.fig.add_subplot(111)
         cls.ax.line(fd.x, fd.y, color=cls.color(fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
-        plt.setp(title_obj, color='w')
+        plt.setp(title_obj, color=text_color)
         cls.ax.axis(True)
         cls.ax.spines['left'].set_color(text_color)
         cls.ax.spines['bottom'].set_color(text_color)
@@ -569,7 +561,6 @@ class MPLFigsBackend(MakeFigsBackend):
             )
         )
         # cls.fig = plt.gcf()
-        # breakpoint()
 
 
 
@@ -606,7 +597,6 @@ class MPLFigsBackend(MakeFigsBackend):
                     figsize=(16, 12)
                 )
                 cls.ax = cls.fig.add_subplot(111)
-        # breakpoint()
         cls.ax.scatter(fd.x, fd.y, c=listmap(cls.color, fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color=text_color)
@@ -619,6 +609,7 @@ class MPLFigsBackend(MakeFigsBackend):
         cls.ax.tick_params(axis='y', colors=text_color)
     @classmethod
     def bar(cls, fd):
+
         maxY = None if fd.maxY is None or fd.maxY == 'inf' or not isreal(fd.maxY) else float(fd.maxY)
         minY = None if fd.minY is None or fd.minY == 'inf' or not isreal(fd.minY) else float(fd.minY)
         # maxX = None if fd.maxX is None or fd.maxX == '-inf' or not isreal(fd.maxX) else float(fd.maxX)
@@ -652,7 +643,7 @@ class MPLFigsBackend(MakeFigsBackend):
                 cls.ax = cls.fig.add_subplot(111)
         cls.ax.bar(list(range(1, len(fd.y) + 1)), fd.y, color=listmap(cls.color, fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
-        plt.setp(title_obj, color='w')
+        plt.setp(title_obj, color=text_color)
         cls.ax.axis(True)
         cls.ax.spines['left'].set_color(text_color)
         cls.ax.spines['bottom'].set_color(text_color)
@@ -692,7 +683,6 @@ class MPLFigsBackend(MakeFigsBackend):
         #     )
         # )
         # cls.fig = plt.gcf()
-        # breakpoint()
 
     @classmethod
     def none(cls): pass

@@ -32,7 +32,9 @@ class WolfMakeFigsBackend(MakeFigsBackend):
     @classmethod
     def scatter(cls, fd): return scatter(fd)
     @classmethod
-    def bar(cls, fd): return bar(fd)
+    def bar(cls, fd):
+        breakpoint()
+        return bar(fd)
     @classmethod
     def image(cls, fd):
         log('making image')
