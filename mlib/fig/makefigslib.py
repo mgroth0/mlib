@@ -16,6 +16,10 @@ from mlib.wolf.wolf_lang import *
 
 DEFAULT_TICK_SIZE = 15
 BLACK_FIGS = False
+if BLACK_FIGS:
+    text_color = 'w'
+else:
+    text_color = 'b'
 
 class MakeFigsBackend(ABC):
     DS = None  # 100 10000
@@ -98,13 +102,19 @@ class MakeFigsBackend(ABC):
             backgrounds = deepcopy(data)
             for rrr in itr(data):
                 for c in itr(data[rrr]):
-                    backgrounds[rrr][c] = cls.color(0, 0, 0)
+                    if BLACK_FIGS:
+                        backgrounds[rrr][c] = cls.color(0, 0, 0)
+                    else:
+                        backgrounds[rrr][c] = cls.color(1, 1, 1) #256?
                     if data[rrr][c] is None:
                         data[rrr][c] = ''
                         if wolf:
                             backgrounds[rrr][c] = cls.none()
                         else:
-                            backgrounds[rrr][c] = cls.color(0, 0, 0)
+                            if BLACK_FIGS:
+                                backgrounds[rrr][c] = cls.color(0, 0, 0)
+                            else:
+                                backgrounds[rrr][c] = cls.color(1, 1, 1) #256?
                     elif not isstr(data[rrr][c]):
                         dat = data[rrr][c]
                         if high != 0:
@@ -388,14 +398,13 @@ class MakeFigsBackend(ABC):
             else:
                 title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size / 3)
                 plt.setp(title_obj, color='w')
-                c = 'w'
                 cls.ax.axis(True)
-                cls.ax.spines['left'].set_color(c)
-                cls.ax.spines['bottom'].set_color(c)
-                cls.ax.xaxis.label.set_color(c)
-                cls.ax.yaxis.label.set_color(c)
-                cls.ax.tick_params(axis='x', colors=c)
-                cls.ax.tick_params(axis='y', colors=c)
+                cls.ax.spines['left'].set_color(text_color)
+                cls.ax.spines['bottom'].set_color(text_color)
+                cls.ax.xaxis.label.set_color(text_color)
+                cls.ax.yaxis.label.set_color(text_color)
+                cls.ax.tick_params(axis='x', colors=text_color)
+                cls.ax.tick_params(axis='y', colors=text_color)
                 cls.ax.set_xticks(arr(xt_mpl_t) * gl)
                 cls.ax.set_xticklabels(xt_mpl_l, rotation=90)
                 # cls.ax.xticks(rotation=90)
@@ -403,14 +412,14 @@ class MakeFigsBackend(ABC):
                 cls.ax.set_yticklabels(yt_mpl_l)
 
                 cax.axis(True)
-                cax.spines['left'].set_color(c)
-                cax.spines['bottom'].set_color(c)
-                cax.spines['top'].set_color(c)
-                cax.spines['right'].set_color(c)
-                cax.xaxis.label.set_color(c)
-                cax.yaxis.label.set_color(c)
-                cax.tick_params(axis='x', colors=c)
-                cax.tick_params(axis='y', colors=c)
+                cax.spines['left'].set_color(text_color)
+                cax.spines['bottom'].set_color(text_color)
+                cax.spines['top'].set_color(text_color)
+                cax.spines['right'].set_color(text_color)
+                cax.xaxis.label.set_color(text_color)
+                cax.yaxis.label.set_color(text_color)
+                cax.tick_params(axis='x', colors=text_color)
+                cax.tick_params(axis='y', colors=text_color)
                 # cax.set_xticks(arr(xt_mpl_t) * gl)
                 # cax.set_xticklabels(xt_mpl_l, rotation=90)
                 # cls.ax.xticks(rotation=90)
@@ -500,14 +509,13 @@ class MPLFigsBackend(MakeFigsBackend):
         cls.ax.line(fd.x, fd.y, color=cls.color(fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color='w')
-        c = 'w'
         cls.ax.axis(True)
-        cls.ax.spines['left'].set_color(c)
-        cls.ax.spines['bottom'].set_color(c)
-        cls.ax.xaxis.label.set_color(c)
-        cls.ax.yaxis.label.set_color(c)
-        cls.ax.tick_params(axis='x', colors=c)
-        cls.ax.tick_params(axis='y', colors=c)
+        cls.ax.spines['left'].set_color(text_color)
+        cls.ax.spines['bottom'].set_color(text_color)
+        cls.ax.xaxis.label.set_color(text_color)
+        cls.ax.yaxis.label.set_color(text_color)
+        cls.ax.tick_params(axis='x', colors=text_color)
+        cls.ax.tick_params(axis='y', colors=text_color)
         # cls.ax.set_xticks(arr(xt_mpl_t) * gl)
         # cls.ax.set_xticklabels(xt_mpl_l, rotation=90)
         # cls.ax.xticks(rotation=90)
@@ -580,14 +588,13 @@ class MPLFigsBackend(MakeFigsBackend):
         cls.ax.scatter(fd.x, fd.y, color=cls.color(fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color='w')
-        c = 'w'
         cls.ax.axis(True)
-        cls.ax.spines['left'].set_color(c)
-        cls.ax.spines['bottom'].set_color(c)
-        cls.ax.xaxis.label.set_color(c)
-        cls.ax.yaxis.label.set_color(c)
-        cls.ax.tick_params(axis='x', colors=c)
-        cls.ax.tick_params(axis='y', colors=c)
+        cls.ax.spines['left'].set_color(text_color)
+        cls.ax.spines['bottom'].set_color(text_color)
+        cls.ax.xaxis.label.set_color(text_color)
+        cls.ax.yaxis.label.set_color(text_color)
+        cls.ax.tick_params(axis='x', colors=text_color)
+        cls.ax.tick_params(axis='y', colors=text_color)
     @classmethod
     def bar(cls, fd):
         maxY = None if fd.maxY is None or fd.maxY == 'inf' or not isreal(fd.maxY) else float(fd.maxY)
@@ -610,22 +617,27 @@ class MPLFigsBackend(MakeFigsBackend):
         # callouts (fd.callout_x) (fd.callout)
 
         if cls.fig is None:
-            cls.fig = plt.figure(
-                figsize=(16, 12),
-                facecolor='black'
-            )
-            cls.ax = cls.fig.add_subplot(111, facecolor='black')
+            if BLACK_FIGS:
+                cls.fig = plt.figure(
+                    figsize=(16, 12),
+                    facecolor='black'
+                )
+                cls.ax = cls.fig.add_subplot(111, facecolor='black')
+            else:
+                cls.fig = plt.figure(
+                    figsize=(16, 12)
+                )
+                cls.ax = cls.fig.add_subplot(111)
         cls.ax.bar(list(range(1, len(fd.y)+1)), fd.y, color=listmap(cls.color, fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color='w')
-        c = 'w'
         cls.ax.axis(True)
-        cls.ax.spines['left'].set_color(c)
-        cls.ax.spines['bottom'].set_color(c)
-        cls.ax.xaxis.label.set_color(c)
-        cls.ax.yaxis.label.set_color(c)
-        cls.ax.tick_params(axis='x', colors=c)
-        cls.ax.tick_params(axis='y', colors=c)
+        cls.ax.spines['left'].set_color(text_color)
+        cls.ax.spines['bottom'].set_color(text_color)
+        cls.ax.xaxis.label.set_color(text_color)
+        cls.ax.yaxis.label.set_color(text_color)
+        cls.ax.tick_params(axis='x', colors=text_color)
+        cls.ax.tick_params(axis='y', colors=text_color)
         # cls.ax.set_xticks(arr(xt_mpl_t) * gl)
         # cls.ax.set_xticklabels(xt_mpl_l, rotation=90)
         # cls.ax.xticks(rotation=90)
