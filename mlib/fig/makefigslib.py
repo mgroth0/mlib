@@ -132,7 +132,7 @@ class MakeFigsBackend(ABC):
                             data[rrr][c] = sigfig(dat, 2)
                         else:
                             # data[rrr][c] = [0, 0, b]
-                            data[rrr][c] = File('jet.mat').load()['c'][round(b*256)]
+                            data[rrr][c] = File('jet.mat').load()['c'][round(b*256)-1]
 
                         if (fd.headers_included and rrr > 0 and c > 0) or not fd.headers_included:
                             backgrounds[rrr][c] = cls.color(0, 0, b)
