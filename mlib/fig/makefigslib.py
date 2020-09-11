@@ -108,7 +108,7 @@ class MakeFigsBackend(ABC):
                     if BLACK_FIGS:
                         backgrounds[rrr][c] = cls.color(0, 0, 0)
                     else:
-                        backgrounds[rrr][c] = cls.color(1, 1, 1) #256?
+                        backgrounds[rrr][c] = cls.color(1, 1, 1)  # 256?
                     if data[rrr][c] is None:
                         data[rrr][c] = ''
                         if wolf:
@@ -117,7 +117,7 @@ class MakeFigsBackend(ABC):
                             if BLACK_FIGS:
                                 backgrounds[rrr][c] = cls.color(0, 0, 0)
                             else:
-                                backgrounds[rrr][c] = cls.color(255, 255, 255) #256?
+                                backgrounds[rrr][c] = cls.color(255, 255, 255)  # 256?
                     elif not isstr(data[rrr][c]):
                         dat = data[rrr][c]
                         if high != 0:
@@ -134,7 +134,11 @@ class MakeFigsBackend(ABC):
                             data[rrr][c] = sigfig(dat, 2)
                         else:
                             # data[rrr][c] = [0, 0, b]
-                            data[rrr][c] = JET[round(b*256)-1].tolist()
+                            # breakpoint()
+                            try:
+                                data[rrr][c] = JET[round(b * 256) - 1].tolist()
+                            except:
+                                breakpoint()
 
                         if (fd.headers_included and rrr > 0 and c > 0) or not fd.headers_included:
                             backgrounds[rrr][c] = cls.color(0, 0, b)
@@ -595,7 +599,8 @@ class MPLFigsBackend(MakeFigsBackend):
                     figsize=(16, 12)
                 )
                 cls.ax = cls.fig.add_subplot(111)
-        cls.ax.scatter(fd.x, fd.y, color=cls.color(fd.item_colors))
+        # breakpoint()
+        cls.ax.scatter(fd.x, fd.y, c=listmap(cls.color, fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color=text_color)
         cls.ax.axis(True)
@@ -638,7 +643,7 @@ class MPLFigsBackend(MakeFigsBackend):
                     figsize=(16, 12)
                 )
                 cls.ax = cls.fig.add_subplot(111)
-        cls.ax.bar(list(range(1, len(fd.y)+1)), fd.y, color=listmap(cls.color, fd.item_colors))
+        cls.ax.bar(list(range(1, len(fd.y) + 1)), fd.y, color=listmap(cls.color, fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color='w')
         cls.ax.axis(True)
