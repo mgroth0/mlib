@@ -15,6 +15,7 @@ from mlib.boot.stream import ziplist, arr, ints, itr, listmap
 from mlib.wolf.wolf_lang import *
 
 DEFAULT_TICK_SIZE = 15
+BLACK_FIGS = False
 
 class MakeFigsBackend(ABC):
     DS = None  # 100 10000
@@ -70,11 +71,19 @@ class MakeFigsBackend(ABC):
         if wolf:
             from mlib.wolf.wolf_figs import addHeaderLabels, LinePlotGrid, OneWayOfShowingARaster
         if cls == MPLFigsBackend:
-            cls.fig = plt.figure(
-                figsize=(16, 12),
-                facecolor='black'
-            )
-            cls.ax = cls.fig.add_subplot(111, facecolor='black')
+            if BLACK_FIGS:
+                cls.fig = plt.figure(
+                    figsize=(16, 12),
+                    facecolor='black'
+                )
+            else:
+                cls.fig = plt.figure(
+                    figsize=(16, 12)
+                )
+            if BLACK_FIGS:
+                cls.ax = cls.fig.add_subplot(111, facecolor='black')
+            else:
+                cls.ax = cls.fig.add_subplot(111)
             cls.ax.axis("off")
             cls.tabl = None
         data = fd.data
@@ -475,11 +484,19 @@ class MPLFigsBackend(MakeFigsBackend):
         # callouts (fd.callout_x) (fd.callout)
 
         if cls.fig is None:
-            cls.fig = plt.figure(
-                figsize=(16, 12),
-                facecolor='black'
-            )
-            cls.ax = cls.fig.add_subplot(111, facecolor='black')
+            if BLACK_FIGS:
+                cls.fig = plt.figure(
+                    figsize=(16, 12),
+                    facecolor='black'
+                )
+            else:
+                cls.fig = plt.figure(
+                    figsize=(16, 12)
+                )
+            if BLACK_FIGS:
+                cls.ax = cls.fig.add_subplot(111, facecolor='black')
+            else:
+                cls.ax = cls.fig.add_subplot(111)
         cls.ax.line(fd.x, fd.y, color=cls.color(fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color='w')
@@ -549,11 +566,17 @@ class MPLFigsBackend(MakeFigsBackend):
         # callouts (fd.callout_x) (fd.callout)
 
         if cls.fig is None:
-            cls.fig = plt.figure(
-                figsize=(16, 12),
-                facecolor='black'
-            )
-            cls.ax = cls.fig.add_subplot(111, facecolor='black')
+            if BLACK_FIGS:
+                cls.fig = plt.figure(
+                    figsize=(16, 12),
+                    facecolor='black'
+                )
+                cls.ax = cls.fig.add_subplot(111, facecolor='black')
+            else:
+                cls.fig = plt.figure(
+                    figsize=(16, 12)
+                )
+                cls.ax = cls.fig.add_subplot(111)
         cls.ax.scatter(fd.x, fd.y, color=cls.color(fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color='w')
