@@ -98,9 +98,12 @@ class MakeFigsBackend(ABC):
             tg = fd.confuse_target
             low = 0
             high = tg
-            scaleBits = []
-            for i in range(1, 21):
-                scaleBits += [[[0, 0, i / 21]]]
+
+            # scaleBits = []
+            # for i in range(1, 21):
+            #     scaleBits += [[[0, 0, i / 21]]]
+            scaleBits = JET.tolist()
+
             show_nums = fd.show_nums
             backgrounds = deepcopy(data)
             for rrr in itr(data):
