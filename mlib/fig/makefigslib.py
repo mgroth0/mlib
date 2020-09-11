@@ -20,7 +20,8 @@ BLACK_FIGS = False
 if BLACK_FIGS:
     text_color = 'w'
 else:
-    text_color = 'b'
+    # text_color = 'b'
+    text_color = 'k'
 
 JET = File('jet.mat').load()['c']
 
