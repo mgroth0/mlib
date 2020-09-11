@@ -134,7 +134,6 @@ class MakeFigsBackend(ABC):
                             data[rrr][c] = sigfig(dat, 2)
                         else:
                             # data[rrr][c] = [0, 0, b]
-                            breakpoint()
                             data[rrr][c] = JET[round(b*256)-1].tolist()
 
                         if (fd.headers_included and rrr > 0 and c > 0) or not fd.headers_included:
