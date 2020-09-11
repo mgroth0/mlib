@@ -279,7 +279,10 @@ class MakeFigsBackend(ABC):
                 # cmap = LinearSegmentedColormap.from_list(
                 #     'bluemap', arr(scaleBits).reshape(20, 3), N=20)
                 cmap = LinearSegmentedColormap.from_list(
-                    'jet', arr(scaleBits).reshape(20, 3), N=20)
+                    'jet',
+                    arr(scaleBits)#.reshape(20, 3)
+                    , N=len(scaleBits)#20
+                )
                 sm = matplotlib.cm.ScalarMappable(norm=None, cmap=cmap)
                 cbar = cls.fig.colorbar(
                     sm,
