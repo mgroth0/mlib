@@ -531,6 +531,7 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
 
     @property
     def paths(self):
+        log(f'{self}:{self.isdir=}')
         assert self.isdir
         a = arr(
             [self.join(name) for name in sort(os.listdir(self.abspath))]
