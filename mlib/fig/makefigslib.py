@@ -11,7 +11,7 @@ from mlib.boot.lang import isstr, enum
 from mlib.math import isreal, sigfig
 from mlib.boot import log
 from mlib.boot.mlog import TODO, err
-from mlib.boot.stream import ziplist, arr, ints, itr
+from mlib.boot.stream import ziplist, arr, ints, itr, listmap
 from mlib.wolf.wolf_lang import *
 
 DEFAULT_TICK_SIZE = 15
@@ -592,7 +592,7 @@ class MPLFigsBackend(MakeFigsBackend):
                 facecolor='black'
             )
             cls.ax = cls.fig.add_subplot(111, facecolor='black')
-        cls.ax.bar(list(range(1, len(fd.y))), fd.y, color=cls.color(fd.item_colors))
+        cls.ax.bar(list(range(1, len(fd.y))), fd.y, color=listmap(cls.color, fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color='w')
         c = 'w'
