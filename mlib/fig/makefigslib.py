@@ -134,7 +134,8 @@ class MakeFigsBackend(ABC):
                             data[rrr][c] = sigfig(dat, 2)
                         else:
                             # data[rrr][c] = [0, 0, b]
-                            data[rrr][c] = JET[round(b*256)-1]
+                            breakpoint()
+                            data[rrr][c] = JET[round(b*256)-1].tolist()
 
                         if (fd.headers_included and rrr > 0 and c > 0) or not fd.headers_included:
                             backgrounds[rrr][c] = cls.color(0, 0, b)
@@ -597,7 +598,7 @@ class MPLFigsBackend(MakeFigsBackend):
                 cls.ax = cls.fig.add_subplot(111)
         cls.ax.scatter(fd.x, fd.y, color=cls.color(fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
-        plt.setp(title_obj, color='w')
+        plt.setp(title_obj, color=text_color)
         cls.ax.axis(True)
         cls.ax.spines['left'].set_color(text_color)
         cls.ax.spines['bottom'].set_color(text_color)
