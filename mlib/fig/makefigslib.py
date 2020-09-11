@@ -528,9 +528,114 @@ class MPLFigsBackend(MakeFigsBackend):
 
 
     @classmethod
-    def scatter(cls, fd): TODO()
+    def scatter(cls, fd):
+        maxY = None if fd.maxY is None or fd.maxY == 'inf' or not isreal(fd.maxY) else float(fd.maxY)
+        minY = None if fd.minY is None or fd.minY == 'inf' or not isreal(fd.minY) else float(fd.minY)
+        maxX = None if fd.maxX is None or fd.maxX == '-inf' or not isreal(fd.maxX) else float(fd.maxX)
+        minX = None if fd.minX is None or fd.minX == 'inf' or not isreal(fd.minX) else float(fd.minX)
+
+        if maxY != None and minY != None:
+            diff = maxY - minY
+            pad = diff * (fd.y_pad_percent / 100)
+            maxY = maxY + pad
+            minY = minY - pad
+        #
+        if maxX != None and minX != None:
+            #     forced padding for labels
+            diff = maxX - minX
+            pad = diff * 0.2
+            maxX = maxX + pad
+
+        # callouts (fd.callout_x) (fd.callout)
+
+        if cls.fig is None:
+            cls.fig = plt.figure(
+                figsize=(16, 12),
+                facecolor='black'
+            )
+            cls.ax = cls.fig.add_subplot(111, facecolor='black')
+        cls.ax.scatter(fd.x, fd.y, color=cls.color(fd.item_colors))
+        title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
+        plt.setp(title_obj, color='w')
+        c = 'w'
+        cls.ax.axis(True)
+        cls.ax.spines['left'].set_color(c)
+        cls.ax.spines['bottom'].set_color(c)
+        cls.ax.xaxis.label.set_color(c)
+        cls.ax.yaxis.label.set_color(c)
+        cls.ax.tick_params(axis='x', colors=c)
+        cls.ax.tick_params(axis='y', colors=c)
     @classmethod
-    def bar(cls, fd): TODO()
+    def bar(cls, fd):
+        maxY = None if fd.maxY is None or fd.maxY == 'inf' or not isreal(fd.maxY) else float(fd.maxY)
+        minY = None if fd.minY is None or fd.minY == 'inf' or not isreal(fd.minY) else float(fd.minY)
+        # maxX = None if fd.maxX is None or fd.maxX == '-inf' or not isreal(fd.maxX) else float(fd.maxX)
+        # minX = None if fd.minX is None or fd.minX == 'inf' or not isreal(fd.minX) else float(fd.minX)
+
+        if maxY != None and minY != None:
+            diff = maxY - minY
+            pad = diff * (fd.y_pad_percent / 100)
+            maxY = maxY + pad
+            minY = minY - pad
+        #
+        # if maxX != None and minX != None:
+        #     #     forced padding for labels
+        #     diff = maxX - minX
+        #     pad = diff * 0.2
+        #     maxX = maxX + pad
+
+        # callouts (fd.callout_x) (fd.callout)
+
+        if cls.fig is None:
+            cls.fig = plt.figure(
+                figsize=(16, 12),
+                facecolor='black'
+            )
+            cls.ax = cls.fig.add_subplot(111, facecolor='black')
+        cls.ax.bar(list(range(1, len(fd.y))), fd.y, color=cls.color(fd.item_colors))
+        title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
+        plt.setp(title_obj, color='w')
+        c = 'w'
+        cls.ax.axis(True)
+        cls.ax.spines['left'].set_color(c)
+        cls.ax.spines['bottom'].set_color(c)
+        cls.ax.xaxis.label.set_color(c)
+        cls.ax.yaxis.label.set_color(c)
+        cls.ax.tick_params(axis='x', colors=c)
+        cls.ax.tick_params(axis='y', colors=c)
+        # cls.ax.set_xticks(arr(xt_mpl_t) * gl)
+        # cls.ax.set_xticklabels(xt_mpl_l, rotation=90)
+        # cls.ax.xticks(rotation=90)
+        # cls.ax.set_yticks(arr(yt_mpl_t) * gl)
+        # cls.ax.set_yticklabels(yt_mpl_l)
+        # cls.ax.annotate(
+        #     # fd.callout,
+        #     # "some text",
+        #     fd.y_label,
+        #     xy=(
+        #         fd.x[-1]
+        #         , fd.y[-1]
+        #     ),
+        #     xytext=(
+        #         (fd.x[-1] * 1.035),
+        #         fd.y[-1]
+        #     ),
+        #     xycoords='data',
+        #     horizontalalignment='left',
+        #     verticalalignment='bottom',
+        #     fontsize=20,
+        #     arrowprops=dict(
+        #         facecolor='w',
+        #         shrink=0.05
+        #     ),
+        #     bbox=dict(
+        #         boxstyle='round,pad=0.2',
+        #         fc='yellow',
+        #         alpha=0.3
+        #     )
+        # )
+        # cls.fig = plt.gcf()
+        # breakpoint()
 
     @classmethod
     def none(cls): pass
