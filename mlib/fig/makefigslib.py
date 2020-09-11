@@ -592,7 +592,7 @@ class MPLFigsBackend(MakeFigsBackend):
                 facecolor='black'
             )
             cls.ax = cls.fig.add_subplot(111, facecolor='black')
-        cls.ax.bar(list(range(1, len(fd.y))), fd.y, color=listmap(cls.color, fd.item_colors))
+        cls.ax.bar(list(range(1, len(fd.y)+1)), fd.y, color=listmap(cls.color, fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color='w')
         c = 'w'
