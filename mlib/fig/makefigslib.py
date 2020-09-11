@@ -117,7 +117,7 @@ class MakeFigsBackend(ABC):
                             if BLACK_FIGS:
                                 backgrounds[rrr][c] = cls.color(0, 0, 0)
                             else:
-                                backgrounds[rrr][c] = cls.color(1, 1, 1) #256?
+                                backgrounds[rrr][c] = cls.color(255, 255, 255) #256?
                     elif not isstr(data[rrr][c]):
                         dat = data[rrr][c]
                         if high != 0:
@@ -269,8 +269,10 @@ class MakeFigsBackend(ABC):
                 cax = divider.append_axes("right", size="5%", pad=0.05)
 
                 # cmap = matplotlib.colors.Colormap('name', N=256)
+                # cmap = LinearSegmentedColormap.from_list(
+                #     'bluemap', arr(scaleBits).reshape(20, 3), N=20)
                 cmap = LinearSegmentedColormap.from_list(
-                    'bluemap', arr(scaleBits).reshape(20, 3), N=20)
+                    'jet', arr(scaleBits).reshape(20, 3), N=20)
                 sm = matplotlib.cm.ScalarMappable(norm=None, cmap=cmap)
                 cbar = cls.fig.colorbar(
                     sm,
@@ -321,7 +323,8 @@ class MakeFigsBackend(ABC):
                 # breakpoint()
                 for sub in listpoints:
                     # cls.ax.line(sub[:, 0], sub[:, 1], 'y--')
-                    cls.ax.plot(sub[:, 0], sub[:, 1], 'y--')
+                    # cls.ax.plot(sub[:, 0], sub[:, 1], 'y--')
+                    cls.ax.plot(sub[:, 0], sub[:, 1], 'black--')
             # rasters start from the bottom but I want this to start from the top
             if wolf:
                 rast = OneWayOfShowingARaster(Raster(reversed(data)), gl)
@@ -404,7 +407,7 @@ class MakeFigsBackend(ABC):
                 # breakpoint()
             else:
                 title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size / 3)
-                plt.setp(title_obj, color='w')
+                plt.setp(title_obj, color=text_color)
                 cls.ax.axis(True)
                 cls.ax.spines['left'].set_color(text_color)
                 cls.ax.spines['bottom'].set_color(text_color)
