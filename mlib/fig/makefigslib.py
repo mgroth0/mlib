@@ -324,7 +324,7 @@ class MakeFigsBackend(ABC):
                 for sub in listpoints:
                     # cls.ax.line(sub[:, 0], sub[:, 1], 'y--')
                     # cls.ax.plot(sub[:, 0], sub[:, 1], 'y--')
-                    cls.ax.plot(sub[:, 0], sub[:, 1], 'black--')
+                    cls.ax.plot(sub[:, 0], sub[:, 1], 'k--')
             # rasters start from the bottom but I want this to start from the top
             if wolf:
                 rast = OneWayOfShowingARaster(Raster(reversed(data)), gl)
