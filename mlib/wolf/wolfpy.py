@@ -238,6 +238,7 @@ def wlformc(wexpr):
 def inputForm(wexpr):
     # if isinstsafe(wexpr, WL_API):
     #     wexpr = wexpr.to_wl()
+    from mlib.str import utf_decode
     return utf_decode(wolframclient.serializers.export(wexpr))
 
 @dataclass

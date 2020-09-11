@@ -100,7 +100,8 @@ class Project(SuperRunner, ABC):
         ]
         EXECUTABLE = main_mod_file().name_pre_ext
 
-    GIT = Repo(pwd())
+    if File('git').exists:
+        GIT = Repo(pwd())
 
     mbuild = False
     extra_flags = []

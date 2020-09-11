@@ -52,6 +52,8 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         self.default_quiet = self._default_default_quiet
 
     def __init__(self, abs, remote=None, mker=False, w=None, default=None, quiet=None):
+        # log('f1')
+        self.allow_autoload=False
         self.IGNORE_DS_STORE = False
         self.DELETE_DS_STORE = True
         self._default = default
@@ -77,7 +79,6 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         else:
             self.isSSH = 'test-3' in abs
         self.abspath = abs
-
         # this might change so they have to be functions
         # self.isfile = os.path.isfile(self.abspath)
         # self.isdir = os.path.isdir(self.abspath)
@@ -121,7 +122,11 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         if isinstsafe(self, Folder):
             return len(self.files)
         else:
-            return len(self.load())
+            # unfortunately numpy asks for len() of random things in its arrays all the time, and this causes files to load like crazy here and slow everything down. so this feature is not possible. Just manually use len(self.load())
+            if not self.allow_autoload:
+                raise AttributeError
+            else:
+                return len(self.load())
     def __iter__(self):
         if isinstsafe(self, Folder):
             return iter(self.files)
@@ -257,6 +262,9 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
 
     def loado(self): return self.load(as_object=True)
     def load(self, as_object=False):
+        # log(f'debug loading {self}')
+        # if self.ext == 'mat':
+        #     breakpoint()
         assert not self.isdir
         if not self.default_quiet:
             log('Loading ' + self.abspath, ref=1)
@@ -508,7 +516,9 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
     @property
     def filenames(self): return self.files.map(__.name)
     @property
-    def files(self): return self.paths.map(File)
+    def files(self):
+        r = self.paths.map(File)
+        return r
 
     @property
     def files_recursive(self):
@@ -957,6 +967,7 @@ def mypwd(remote=None):
 def mkdir(name):
     from pathlib import Path
     Path(name).mkdir(parents=True, exist_ok=True)
+    return Folder(name)
 
 
 class RecursiveFileDictProxy(ProxyDictRoot):

@@ -35,7 +35,10 @@ class PlotData(FigData):
                  xticklabels=None,
                  legend=None,
                  tickFont=None,
-                 xticklocs=None
+                 xticklocs=None,
+                 err=(),
+                 bar_sideways_labels=True,
+                 callouts = None
                  ):
         super().__init__(title)
 
@@ -63,7 +66,7 @@ class PlotData(FigData):
         self.x = x  # % can be {}
         self.xticklabels = xticklabels
         self.y = y
-        self.err = []
+        self.err = list(err)
 
         self.legend = legend
 
@@ -92,7 +95,7 @@ class PlotData(FigData):
         self.scatter_shape = None
 
         self.scat_point_size = 100
-        self.bar_sideways_labels = True
+        self.bar_sideways_labels = bar_sideways_labels
 
         self.label_size = 40
 
@@ -104,6 +107,7 @@ class PlotData(FigData):
 
         self.callout_x = None
         self.callout = None
+        self.callouts = callouts
 
         self.caption = None
 

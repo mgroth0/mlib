@@ -1,7 +1,8 @@
 from wolframclient.language import wl
 
-import lib.wolf.makefigslib
+# import mlib.wolf.makefigslib
 # from wolfpy import weval
+from mlib.fig import makefigslib
 
 def scatter(fd):
     color_y = []

@@ -1,11 +1,12 @@
 from wolframclient.language import wlexpr, wl
 
-from lib.wolf.wolf_figs import defaultPlotOptions
+
 from mlib.boot.mlog import log
 from mlib.boot.stream import ziplist
 from mlib.wolf.wolf_lang import LabelingFunction, Rule, Color, Callout, Background, Appearance, LeaderSize, ListLinePlot
 
 def line(fd):
+    from mlib.wolf.wolf_figs import defaultPlotOptions
     x = fd.x
     y = fd.y
     log('creating a line with length: ' + str(len(fd.y)))
@@ -40,7 +41,30 @@ def line(fd):
 
     data = ziplist(x,y)
 
-    if len(y) > 2:
+    if fd.callouts is not None:
+        for i in range(len(y)-1):
+            # print('\tcallout for ' + str(data[-1]))
+            col = fd.item_colors[i]
+            # print('\tcolor: ' + str(col))
+            col = Color(*col)
+
+            data[i] = list(data[i])
+            data[i][-1] = Callout(
+                data[i][-1],
+                fd.callouts[i],
+                data[i][-1],  # pos
+                Background(col),
+                Appearance('Balloon'),
+                LeaderSize(
+                    [
+                        5,
+                        wlexpr('180 Degree'),
+                        1
+                    ]
+                )
+            )
+    elif False and len(y) > 2: #TEMP DISABLE
+
         print('\tcallout for ' + str(data[-1]))
         col = fd.item_colors
         print('\tcolor: ' + str(col))

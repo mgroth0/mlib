@@ -110,3 +110,4 @@ def pwd(): return os.getcwd()
 
 
 HOME = str(Path.home())
+DESKTOP = os.path.join(HOME, 'Desktop')

@@ -1,11 +1,11 @@
-
 # @singleton
 from abc import abstractmethod
 from collections import Counter
 import numpy as np
 from mlib.boot import log
-from mlib.boot.mutil import isreal, objarray, make2d, concat
+from mlib.boot.stream import objarray, concat, make2d, listmap
 from mlib.fig.makefigslib import MakeFigsBackend
+from mlib.math import isreal
 from mlib.wolf.bar import bar
 from mlib.wolf.line import line
 from mlib.wolf.scatter import scatter
@@ -19,6 +19,9 @@ class WolfMakeFigsBackend(MakeFigsBackend):
             Text(o),
             Background(background)
         )
+
+    @classmethod
+    def table(cls, fd, force_wolf=True): return super().table(fd, force_wolf)
 
     @classmethod
     def color(cls, *rgb): return Color(*rgb)
@@ -43,7 +46,9 @@ class WolfMakeFigsBackend(MakeFigsBackend):
 
     @classmethod
     def export_fd(cls, makes, fd, overwrite):
-        return [(cls.addLayer(vis), fd.imgFile) for vis in makes]
+        rrr = [(cls.addLayer(vis), fd.imgFile) for vis in makes]
+        # breakpoint()
+        return rrr
     @classmethod
     def makeAllPlots(cls, figDats, overwrite):
         import asyncio
@@ -51,8 +56,11 @@ class WolfMakeFigsBackend(MakeFigsBackend):
         wolfram_expressions = super().makeAllPlots(figDats, overwrite)
         wolfram_expressions2 = []
         for w in wolfram_expressions:
-            ww = wl.Show(w[0])
-            wolfram_expressions2 += [wl.UsingFrontEnd(wl.Export(w[1], ww, ImageSize(1000)))]
+            # ww = wl.Show(w[0])
+            ww = wl.Show(listmap(lambda x: x[0], w))
+            # file = w[1]
+            file = w[0][1].abspath
+            wolfram_expressions2 += [wl.UsingFrontEnd(wl.Export(file, ww, ImageSize(1000)))]
 
         async def runasync():
             log('running runasync')
@@ -63,8 +71,10 @@ class WolfMakeFigsBackend(MakeFigsBackend):
                     log(f'Finished making {c["a"]}/{total} figures')
                     c['a'] += 1
                 tasks = []
-                for exp in wolfram_expressions:
+                for exp in wolfram_expressions2:
+                # for exp in wolfram_expressions:
                     tasks += [logAfter(exp, countr, len(figDats))]
+                # breakpoint()
                 await asyncio.wait(tasks)
         asyncio.run(runasync())
 
@@ -127,7 +137,6 @@ def defaultPlotOptions(fd):
 #     for n, f in names_funcs:
 #         cls.__dict__[n] = classmethod(f)
 #     return cls
-
 
 
 def importImage(file, caption=None):

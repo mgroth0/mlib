@@ -27,6 +27,7 @@ class MakeFigsBackend(ABC):
             if makes:
                 log('showing...')
                 will_maybe_do_more += [cls.export_fd(makes, fd, overwrite)]
+        # breakpoint()
         return will_maybe_do_more
     @classmethod
     @abstractmethod
@@ -34,14 +35,17 @@ class MakeFigsBackend(ABC):
 
     @classmethod
     def addLayer(cls, fd):
+        # breakpoint()
         try:
-            return cls.__getattribute__(
+            rrr = cls.__getattribute__(
                 cls, fd.item_type
             ).__get__(cls, cls)(fd)
         except AttributeError:
-            return cls.__getattribute__(
+            rrr = cls.__getattribute__(
                 MakeFigsBackend, fd.item_type
             ).__get__(cls, cls)(fd)
+        # breakpoint()
+        return rrr
 
     @classmethod
     @abstractmethod
@@ -61,8 +65,9 @@ class MakeFigsBackend(ABC):
 
 
     @classmethod
-    def table(cls, fd):
-        if 'Wolf' in cls.__name__:
+    def table(cls, fd, force_wolf=False):
+        wolf = 'Wolf' in cls.__name__ or force_wolf
+        if wolf:
             from mlib.wolf.wolf_figs import addHeaderLabels, LinePlotGrid, OneWayOfShowingARaster
         if cls == MPLFigsBackend:
             cls.fig = plt.figure(
@@ -82,28 +87,31 @@ class MakeFigsBackend(ABC):
                 scaleBits += [[[0, 0, i / 21]]]
             show_nums = fd.show_nums
             backgrounds = deepcopy(data)
-            for r in itr(data):
-                for c in itr(data[r]):
-                    backgrounds[r][c] = cls.color(0, 0, 0)
-                    if data[r][c] is None:
-                        data[r][c] = ''
-                        if 'Wolf' in cls.__name__:
-                            backgrounds[r][c] = cls.none()
+            for rrr in itr(data):
+                for c in itr(data[rrr]):
+                    backgrounds[rrr][c] = cls.color(0, 0, 0)
+                    if data[rrr][c] is None:
+                        data[rrr][c] = ''
+                        if wolf:
+                            backgrounds[rrr][c] = cls.none()
                         else:
-                            backgrounds[r][c] = cls.color(0, 0, 0)
-                    elif not isstr(data[r][c]):
-                        dat = data[r][c]
+                            backgrounds[rrr][c] = cls.color(0, 0, 0)
+                    elif not isstr(data[rrr][c]):
+                        dat = data[rrr][c]
                         if high != 0:
+                            # try:
                             b = (dat / high)
+                            # except:
+                            #     breakpoint()
                         else:
                             b = dat
                         if show_nums:
-                            data[r][c] = sigfig(dat, 2)
+                            data[rrr][c] = sigfig(dat, 2)
                         else:
-                            data[r][c] = [0, 0, b]
+                            data[rrr][c] = [0, 0, b]
 
-                        if (fd.headers_included and r > 0 and c > 0) or not fd.headers_included:
-                            backgrounds[r][c] = cls.color(0, 0, b)
+                        if (fd.headers_included and rrr > 0 and c > 0) or not fd.headers_included:
+                            backgrounds[rrr][c] = cls.color(0, 0, b)
             block_len = fd.block_len
             if block_len is not None and fd.headers_included is False:
                 divs = [[], []]
@@ -146,7 +154,7 @@ class MakeFigsBackend(ABC):
                     else:
                         data[ri][ci] = cls.tableItem(el, backgrounds[ri][ci])
             if fd.top_header_label is not None or fd.side_header_label is not None:
-                if 'Wolf' in cls.__name__:
+                if wolf:
                     data = addHeaderLabels(data, fd.top_header_label, fd.side_header_label).tolist()
                 else:
                     cls.tabl.auto_set_font_size(False)
@@ -213,10 +221,10 @@ class MakeFigsBackend(ABC):
             )]
         if fd.confuse and fd.block_len is not None and fd.block_len > 1:
             if fd.confuse_is_identical:
-                for r in itr(data):
+                for rrr in itr(data):
                     for c in itr(data[0]):
-                        if c > r:
-                            data[r][c] = [0, 0, 0]
+                        if c > rrr:
+                            data[rrr][c] = [0, 0, 0]
 
             if cls != MPLFigsBackend:
                 scale = Graphics(
@@ -262,30 +270,34 @@ class MakeFigsBackend(ABC):
 
             # ticks start from the bottom but I want these to start from the top
             # labellocs_labels.reverse()
-            if 'Wolf' in cls.__name__:
+            if wolf:
                 gridlines = LinePlotGrid(line_values, triangle=fd.confuse_is_identical)
             else:
                 # gl = line_values[-1]
                 listpoints = []
                 for i in line_values:
+                    i = i - 0.5
+
                     if fd.confuse_is_identical:
                         listpoints += [
                             [
-                                [i, gl],
+                                [i, gl - 0.5],
                                 [i, i]
                             ]
                         ]
 
-                        listpoints += [[[i, i], [0, i]]]
+                        listpoints += [[[i, i], [- 0.5, i]]]
 
                     else:
-                        listpoints += [[[i, 0], [i, gl]]]
-                        listpoints += [[[0, i], [gl, i]]]
+                        listpoints += [[[i, - 0.5], [i, gl - 0.5]]]
+                        listpoints += [[[- 0.5, i], [gl - 0.5, i]]]
                 listpoints = arr(listpoints)
+                # breakpoint()
                 for sub in listpoints:
-                    cls.ax.line(sub[:, 0], sub[:, 1], 'y--')
+                    # cls.ax.line(sub[:, 0], sub[:, 1], 'y--')
+                    cls.ax.plot(sub[:, 0], sub[:, 1], 'y--')
             # rasters start from the bottom but I want this to start from the top
-            if 'Wolf' in cls.__name__:
+            if wolf:
                 rast = OneWayOfShowingARaster(Raster(reversed(data)), gl)
             else:
                 cls.ax.imshow(list(data))
@@ -319,7 +331,7 @@ class MakeFigsBackend(ABC):
                 # y ticks not reversed for mpl?
                 yt_mpl_t += [(t[0] / gl)]
                 yt_mpl_l += [t[1]]
-            if 'Wolf' in cls.__name__:
+            if wolf:
                 insets = [
                     Inset(
                         obj=Rasterize(scale),
@@ -358,11 +370,12 @@ class MakeFigsBackend(ABC):
                             Background(wlexpr('None'))
                         ),
                         scale=(1, 1),
-                        pos=Scaled([0.5, 1]),
+                        pos=Scaled([0.5, 2]),
                         background=Background(wlexpr('None'))
                     )
                 ]
-                r = Graphics(insets)
+                rrr = Graphics(insets)
+                # breakpoint()
             else:
                 title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size / 3)
                 plt.setp(title_obj, color='w')
@@ -394,9 +407,9 @@ class MakeFigsBackend(ABC):
                 # cls.ax.xticks(rotation=90)
                 # cax.set_yticks(arr(yt_mpl_t) * gl)
                 # cax.set_yticklabels(yt_mpl_l)
-
-        if 'Wolf' in cls.__name__:
-            return r
+        # breakpoint()
+        if wolf:
+            return rrr
 
 
 
@@ -420,6 +433,7 @@ class MakeFigsBackend(ABC):
 
 # @singleton
 class MPLFigsBackend(MakeFigsBackend):
+    fig = None
     @classmethod
     def export_fd(cls, makes, fd, overwrite):
         [cls.addLayer(vis) for vis in makes]
@@ -508,6 +522,8 @@ class MPLFigsBackend(MakeFigsBackend):
                 alpha=0.3
             )
         )
+        # cls.fig = plt.gcf()
+        # breakpoint()
 
 
 

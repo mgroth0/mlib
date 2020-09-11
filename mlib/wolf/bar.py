@@ -1,9 +1,9 @@
 from wolframclient.language import wl, wlexpr
 import numpy as np
 # from wolfpy import weval
-from lib.wolf.wolf_figs import defaultPlotOptions
 from mlib.wolf.wolfpy import weval
 def bar(fd):
+    from mlib.wolf.wolf_figs import defaultPlotOptions
     x = fd.x
     y = fd.y
     maxY = wl.All if fd.maxY is None or fd.maxY == -np.inf else fd.maxY
@@ -18,7 +18,6 @@ def bar(fd):
         minY = minY - pad
 
     rotate = wlexpr('90 Degree') if fd.bar_sideways_labels else wlexpr('0 Degree')
-
     err = fd.err
     rotate = '90 Degree' if fd.bar_sideways_labels else '0 Degree'
     vstring = '\n\n\n' if fd.bar_sideways_labels else ''

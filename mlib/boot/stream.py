@@ -8,6 +8,8 @@ import numpy as np
 from mlib.boot.lang import isinstsafe, cn, isstr, isnumber, will_break_numpy, isitr, istuple, islist, is_non_str_itr, isdict, enum
 
 def arr(v=(), dtype=None, ndims=None):
+    from mlib.boot import mlog
+    # mlog.log('arr1')
     if ndims is None and (
             isinstsafe(v, np.ndarray) or
             cn(v) == 'ImagingCore' or
@@ -18,8 +20,10 @@ def arr(v=(), dtype=None, ndims=None):
             )
     ):
         return mparray(v, dtype=dtype)
+    # mlog.log('arr2')
     if not isinstance(v, Iterable):
         v = [v]
+    # mlog.log('arr3')
     if len(v) > 0 and not isnumber(v[0]):
         if ndims is None: ndims = 1
         if dtype is None:
@@ -39,20 +43,34 @@ def arr(v=(), dtype=None, ndims=None):
             shape += [len(ref)]
         v.append(stopper)
         shape[0] = shape[0] + 1
+        # mlog.log('arr3.5')
         ar = np.ndarray(shape=tuple(shape), dtype=dtype)
         from mlib.file import File
         try:
             from mlib.boot.mlog import Muffle
+            # mlog.log('arr3.6')
             with Muffle(*listfilt(will_break_numpy, v)):
-                ar[slice(*slices)] = v
+                # mlog.log('arr3.65')
+                sli = slice(*slices)
+                # mlog.log('arr3.67')
+                ar[sli] = v
+                # mlog.log('arr3.68')
+                # mlog.log(f'{len(ar)=}')
+                # mlog.log(f'{v=}')
+                # mlog.log(f'{ar=}')
+                # mlog.log(f'{sli=}')
         except File.NoLoadSupportException:
+            # mlog.log('arr3.7')
             pass
+        # mlog.log('arr3.8')
         ar = mparray(ar, dtype=dtype)
         v.pop()
         ar = ar[:-1]
         assert len(v) == len(ar)
+        # mlog.log('arr4')
         return ar
     else:
+        # mlog.log('arr5')
         return mparray(v, dtype=dtype)
 
 
@@ -129,7 +147,11 @@ class mparray(np.ndarray):
     def max_by(self, lamp): return max_by(self, lamp)
     def filtered(self, *tests): return arr(filtered(self, *tests))
     def first(self, *tests): return filtered(self, *tests)[0]
-    def map(self, fun): return arr(listmap(fun, self))
+    def map(self, fun):
+        import mlib.boot.mlog
+        r = listmap(fun, self)
+        r = arr(r)
+        return r
     def join(self, s): return s.join(self.tolist())
     def filt_includes(self, s): return self.filtered(
         lambda mine: s in mine,

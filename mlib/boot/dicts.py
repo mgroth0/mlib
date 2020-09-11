@@ -19,6 +19,7 @@ class PermaDict(DefaultMutableMapping):
     def __init__(self, file):
         from mlib.file import File
         self.file = File(file)
+        self.file.allow_autoload = True
         super().__init__(self.file)
         if not self.file.exists:
             self.file.save({})
