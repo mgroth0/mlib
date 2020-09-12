@@ -115,10 +115,10 @@ class MakeFigsBackend(ABC):
                         if wolf:
                             backgrounds[rrr][c] = cls.none()
                         else:
-                            if BLACK_FIGS:
-                                backgrounds[rrr][c] = cls.color(0, 0, 0)
-                            else:
-                                backgrounds[rrr][c] = cls.color(255, 255, 255)  # 256?
+                            # if BLACK_FIGS:
+                            backgrounds[rrr][c] = cls.color(0, 0, 0)
+                            # else:
+                            #     backgrounds[rrr][c] = cls.color(255, 255, 255)  # 256?
                     elif not isstr(data[rrr][c]):
                         dat = data[rrr][c]
                         if high != 0:
@@ -252,7 +252,10 @@ class MakeFigsBackend(ABC):
                 for rrr in itr(data):
                     for c in itr(data[0]):
                         if c > rrr:
-                            data[rrr][c] = [0, 0, 0]
+                            if BLACK_FIGS:
+                                data[rrr][c] = [0, 0, 0]
+                            else:
+                                data[rrr][c] = [1, 1, 1] #256?
 
             if cls != MPLFigsBackend:
                 scale = Graphics(
