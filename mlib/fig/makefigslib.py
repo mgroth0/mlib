@@ -255,7 +255,7 @@ class MakeFigsBackend(ABC):
                             if BLACK_FIGS:
                                 data[rrr][c] = [0, 0, 0]
                             else:
-                                data[rrr][c] = [1, 1, 1] #256?
+                                data[rrr][c] = [1, 1, 1]  # 256?
 
             if cls != MPLFigsBackend:
                 scale = Graphics(
@@ -278,8 +278,8 @@ class MakeFigsBackend(ABC):
                 #     'bluemap', arr(scaleBits).reshape(20, 3), N=20)
                 cmap = LinearSegmentedColormap.from_list(
                     'jet',
-                    arr(scaleBits)#.reshape(20, 3)
-                    , N=len(scaleBits)#20
+                    arr(scaleBits)  # .reshape(20, 3)
+                    , N=len(scaleBits)  # 20
                 )
                 sm = matplotlib.cm.ScalarMappable(norm=None, cmap=cmap)
                 cbar = cls.fig.colorbar(
@@ -471,6 +471,11 @@ class MPLFigsBackend(MakeFigsBackend):
     @classmethod
     def export_fd(cls, makes, fd, overwrite):
         [cls.addLayer(vis) for vis in makes]
+        if hasattr(fd, 'legend'):
+            cls.ax.legend(
+                handles=fd.legend,
+                loc='lower left'
+            )
         cls.fig.savefig(
             fd.imgFile,
             facecolor=cls.fig.get_facecolor(),
@@ -612,7 +617,6 @@ class MPLFigsBackend(MakeFigsBackend):
         cls.ax.tick_params(axis='y', colors=text_color)
     @classmethod
     def bar(cls, fd):
-
         maxY = None if fd.maxY is None or fd.maxY == 'inf' or not isreal(fd.maxY) else float(fd.maxY)
         minY = None if fd.minY is None or fd.minY == 'inf' or not isreal(fd.minY) else float(fd.minY)
         # maxX = None if fd.maxX is None or fd.maxX == '-inf' or not isreal(fd.maxX) else float(fd.maxX)
