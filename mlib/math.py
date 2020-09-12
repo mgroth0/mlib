@@ -86,9 +86,17 @@ def sigfig(number, ndigits):
 
 # numpy thinks infinity is real, i dont think so
 def isreal(n):
+    if isstr(n):
+        if 'inf' in n:
+            return False
+        else:
+            err('strings cant be tested for real unless inf')
+    # try:
     if n is None or abs(n) == np.inf:
         return False
     return np.isreal(n)
+    # except:
+    #     breakpoint()
 
 def minreal(*nums):
     nums = listfilt(lambda x: isreal(x), nums)

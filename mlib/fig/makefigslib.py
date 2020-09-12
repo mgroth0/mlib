@@ -476,6 +476,7 @@ class MPLFigsBackend(MakeFigsBackend):
                 handles=fd.legend,
                 loc='lower left'
             )
+        # breakpoint()
         cls.fig.savefig(
             fd.imgFile,
             facecolor=cls.fig.get_facecolor(),
@@ -494,6 +495,7 @@ class MPLFigsBackend(MakeFigsBackend):
         plt.imshow(fd.x)
     @classmethod
     def line(cls, fd):
+
         maxY = None if fd.maxY is None or fd.maxY == 'inf' or not isreal(fd.maxY) else float(fd.maxY)
         minY = None if fd.minY is None or fd.minY == 'inf' or not isreal(fd.minY) else float(fd.minY)
         maxX = None if fd.maxX is None or fd.maxX == '-inf' or not isreal(fd.maxX) else float(fd.maxX)
@@ -527,7 +529,9 @@ class MPLFigsBackend(MakeFigsBackend):
                 cls.ax = cls.fig.add_subplot(111, facecolor='black')
             else:
                 cls.ax = cls.fig.add_subplot(111)
-        cls.ax.line(fd.x, fd.y, color=cls.color(fd.item_colors))
+        # breakpoint()
+        # breakpoint()
+        cls.ax.plot(fd.x, fd.y, color=cls.color(fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color=text_color)
         cls.ax.axis(True)
@@ -606,8 +610,16 @@ class MPLFigsBackend(MakeFigsBackend):
                 )
                 cls.ax = cls.fig.add_subplot(111)
         cls.ax.scatter(fd.x, fd.y, c=listmap(cls.color, fd.item_colors))
+
+
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color=text_color)
+
+        cls.ax.set_xlabel(fd.x_label)
+        cls.ax.set_ylabel(fd.y_label)
+
+
+
         cls.ax.axis(True)
         cls.ax.spines['left'].set_color(text_color)
         cls.ax.spines['bottom'].set_color(text_color)
