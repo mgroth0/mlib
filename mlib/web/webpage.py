@@ -20,7 +20,7 @@ def write_index_webpage(
 
     assert root[resource_root_rel].rel_to(root['.']) == resource_root_rel
 
-    assert root[resource_root_rel].abspath == resource_root_file.abspath
+#       assert root[resource_root_rel].abspath == resource_root_file.abspath
 
     write_sub_webpage(
         htmlDoc=htmlDoc,

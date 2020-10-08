@@ -258,7 +258,7 @@ class Project(SuperRunner, ABC):
     def fun_registry(self):
         if 'daily' not in listkeys(self.STATE):
             self.STATE['daily'] = {}
-        return SubDictProxy(self.STATE, 'daily')
+        return SubDictProxy(self.STATE, 'daily',makeObjs = False)
 
     def daily(self, fun, *args):
         self._daily(fun, fun.__name__, *args)

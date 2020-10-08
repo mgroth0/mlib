@@ -39,6 +39,8 @@ class SimpleApp(QApplication):
                  label="Insert Label here",
                  background_fun=None,
                  fullscreen=True,
+                 always_on_top=False,
+                 no_title_bar=False,
                  **kwargs
                  ):
         super().__init__(*args, **kwargs)
@@ -59,10 +61,9 @@ class SimpleApp(QApplication):
 
         self.setPalette(palette)
 
+        self.win = HelloWindow(title=title, label=label, fullscreen=fullscreen, always_on_top=always_on_top,
+                               no_title_bar=no_title_bar)
 
-
-
-        self.win = HelloWindow(title=title, label=label,fullscreen=fullscreen)
         self.input = self.win.input
         self.text = self.win.text
         self.button = self.win.button
@@ -112,7 +113,6 @@ class SimpleApp(QApplication):
 
 
     def quit(self):
-
         #     weird fullscreen ghost is not closing. hopefully this will help.
         self.win.showNormal()
 
@@ -136,15 +136,35 @@ class SimpleApp(QApplication):
 
 
 class HelloWindow(QMainWindow):
-    def __init__(self, title, label,fullscreen=True):
+    def __init__(self, title, label, fullscreen=True, always_on_top=False, no_title_bar=False):
         # QMainWindow.__init__(self)
         # super().__init__(flags, *args, **kwargs)
         flags = []
         args = ()
         kwargs = {}
-        # super().__init__(None, QtCore.Qt.WindowStaysOnTopHint)
-        # super().__init__(None, QtCore.Qt.X11BypassWindowManagerHint)
-        super().__init__()
+
+        flags = 0
+        flags = None
+        if no_title_bar:
+            if flags is None:
+                flags = QtCore.Qt.CustomizeWindowHint
+            else:
+                flags = flags | QtCore.Qt.CustomizeWindowHint
+            # pass
+        if always_on_top:
+            if flags is None:
+                flags = QtCore.Qt.WindowStaysOnTopHint
+            else:
+                flags = flags | QtCore.Qt.WindowStaysOnTopHint
+            # flags = flags + QtCore.Qt.WindowStaysOnTopHint
+            # pass
+            # super().__init__(None, QtCore.Qt.WindowStaysOnTopHint)
+            # super(w).__init__(None, QtCore.Qt.X11BypassWindowManagerHint)
+        # else:
+        super().__init__(None, flags)
+        # self.setWindowFlags(QtCore.Qt.WindowFlags(QtCore.Qt.CustomizeWindowHint,QtCore.Qt.WindowStaysOnTopHint))
+        # super().__init__(None,  QtCore.Qt.WindowStaysOnTopHint)
+
         # self.setMinimumSize(QSize(640, 480))
         # set stylesheet
         # CAUSED BUTTONS TO NOT WORK
@@ -179,22 +199,21 @@ class HelloWindow(QMainWindow):
 
         self.next = 0
 
-        self.text(label)
-
+        self.label = self.text(label)
 
         import AppKit
         screen_sizes = [(screen.frame().size.width, screen.frame().size.height)
-         for screen in AppKit.NSScreen.screens()]
+                        for screen in AppKit.NSScreen.screens()]
         # will give you a list of tuples containing all screen sizes (if multiple monitors present)
         w = screen_sizes[0][0]
         h = screen_sizes[0][1]
 
-        self.setFixedSize(w,h)
+        self.setFixedSize(w, h)
 
         if fullscreen:
             self.showFullScreen()
         else:
-            self.setFixedSize(w,h-45)
+            self.setFixedSize(w, h - 45)
     def text(self, txt=""):
         txt = QLabel(txt, self.cw)
         txt.setPalette(MAIN_QPALETTE)

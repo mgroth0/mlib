@@ -8,7 +8,8 @@ from mlib.term import log_invokation
 from mlib.wolf.wolfpy import weval
 _REGISTERED_SUBROOTS = (
     '/CloudSymbol',
-    '/trash'
+    '/trash',
+    '/Base'
 )
 _MAIN_SUBROOT = '/Users'
 @log_invokation

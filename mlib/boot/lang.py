@@ -68,12 +68,17 @@ def isinstsafe(o, c):
     from mlib.inspect import all_superclasses
     return isinstance(o, c) or c in all_superclasses(o.__class__)
 
+def isslice(v):
+    return isinstance(v,slice)
+
 def isint(v):
     return isinstance(v, int) or isinstance(v, np.int64)
 def isdict(v):
     return isinstance(v, dict)
 def isdictsafe(v):
     return isinstance(v, collections.Mapping)
+def islistsafe(v):
+    return isinstance(v, collections.Sequence)
 def iscls(v):
     return isinstance(v, type)
 def isfun(v):

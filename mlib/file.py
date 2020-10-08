@@ -53,7 +53,7 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
 
     def __init__(self, abs, remote=None, mker=False, w=None, default=None, quiet=None):
         # log('f1')
-        self.allow_autoload=False
+        self.allow_autoload = False
         self.IGNORE_DS_STORE = False
         self.DELETE_DS_STORE = True
         self._default = default
@@ -263,8 +263,6 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
     def loado(self): return self.load(as_object=True)
     def load(self, as_object=False):
         # log(f'debug loading {self}')
-        # if self.ext == 'mat':
-        #     breakpoint()
         assert not self.isdir
         if not self.default_quiet:
             log('Loading ' + self.abspath, ref=1)
@@ -380,7 +378,10 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
 
 
     def deleteIfExists(self):
+        # try:
         if self.exists: self.delete()
+        # except:
+        #     breakpoint()
         return self
 
     def delete(self):
@@ -610,6 +611,9 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         from mlib.km import openInSafari
         return openInSafari(self)
 
+    @property
+    def mtime(self):
+        return os.path.getmtime(self.abspath)
     def read(self):
         with open(self.abspath, 'r') as file:
             return file.read()
@@ -981,6 +985,6 @@ class RecursiveFileDictProxy(ProxyDictRoot):
     def __getitem__(self, k):
         v = self._d[k]
         if isdictsafe(v):
-            return RecursiveSubDictProxy(root_dict=self, key=k)
+            return RecursiveSubDictProxy(root_dict=self, key=k, makeObjs=False)
         else:
             return v

@@ -476,7 +476,6 @@ class MPLFigsBackend(MakeFigsBackend):
                 handles=fd.legend,
                 loc='lower left'
             )
-        # breakpoint()
         cls.fig.savefig(
             fd.imgFile,
             facecolor=cls.fig.get_facecolor(),
@@ -529,8 +528,6 @@ class MPLFigsBackend(MakeFigsBackend):
                 cls.ax = cls.fig.add_subplot(111, facecolor='black')
             else:
                 cls.ax = cls.fig.add_subplot(111)
-        # breakpoint()
-        # breakpoint()
         cls.ax.plot(fd.x, fd.y, color=cls.color(fd.item_colors))
         title_obj = cls.ax.set_title(fd.title, fontSize=fd.title_size)
         plt.setp(title_obj, color=text_color)

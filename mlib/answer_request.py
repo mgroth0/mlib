@@ -1,8 +1,8 @@
 # noinspection PyUnresolvedReferences
 import readline
+
 import sys
 
-from mlib.boot import log
 from mlib.boot.mlog import err
 from mlib.guiutil import SimpleApp
 from mlib.km import activateIdea
@@ -23,7 +23,7 @@ def answer_request(default, q, check, gui=True):
         textInput = app.input(default)
         status = app.text()
     def fun(answer):
-        log('hit button')
+        # log('hit button')
         if gui:
             folName = textInput.text()
         else:

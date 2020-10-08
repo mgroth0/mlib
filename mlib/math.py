@@ -95,8 +95,6 @@ def isreal(n):
     if n is None or abs(n) == np.inf:
         return False
     return np.isreal(n)
-    # except:
-    #     breakpoint()
 
 def minreal(*nums):
     nums = listfilt(lambda x: isreal(x), nums)

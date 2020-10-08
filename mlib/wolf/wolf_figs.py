@@ -33,7 +33,6 @@ class WolfMakeFigsBackend(MakeFigsBackend):
     def scatter(cls, fd): return scatter(fd)
     @classmethod
     def bar(cls, fd):
-        # breakpoint()
         return bar(fd)
     @classmethod
     def image(cls, fd):
@@ -49,7 +48,6 @@ class WolfMakeFigsBackend(MakeFigsBackend):
     @classmethod
     def export_fd(cls, makes, fd, overwrite):
         rrr = [(cls.addLayer(vis), fd.imgFile) for vis in makes]
-        # breakpoint()
         return rrr
     @classmethod
     def makeAllPlots(cls, figDats, overwrite):
@@ -76,7 +74,6 @@ class WolfMakeFigsBackend(MakeFigsBackend):
                 for exp in wolfram_expressions2:
                 # for exp in wolfram_expressions:
                     tasks += [logAfter(exp, countr, len(figDats))]
-                # breakpoint()
                 await asyncio.wait(tasks)
         asyncio.run(runasync())
 
