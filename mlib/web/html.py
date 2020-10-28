@@ -58,10 +58,22 @@ class HTMLPage:
     def addTab(self, name, content):
         if self._tab is None:
             self._tabpane = Div(
-                **{'class': 'tabpane'}
+                **{
+                    'class': 'tabpane',
+
+                    # 'height': '150px',
+                    # 'overflow-y': 'auto'
+
+                }
             )
             self._tab = Tab(
-                **{'class': 'tab'}
+                style={
+                    'height'    : '500px',
+                    'overflow-y': 'auto'
+                },
+                **{
+                    'class': 'tab',
+                }
             )
             self._tabcontent_container = Div(
                 **{'class': 'tabcontent_container'}
