@@ -237,3 +237,12 @@ class HelloWindow(QMainWindow):
         self.gridLayout.addWidget(textInput, self.next, 0)
         self.next += 1
         return textInput
+
+    def pane(self):
+        box = QWidget(self)
+        layout = QGridLayout()
+        box.setLayout(layout)
+        # button.clicked.connect(self.plswork)
+        self.gridLayout.addWidget(box, self.next, 0)
+        self.next += 1
+        return layout
