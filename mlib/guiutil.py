@@ -161,7 +161,10 @@ class HelloWindow(QMainWindow):
             # super().__init__(None, QtCore.Qt.WindowStaysOnTopHint)
             # super(w).__init__(None, QtCore.Qt.X11BypassWindowManagerHint)
         # else:
-        super().__init__(None, flags)
+        if flags is not None:
+            super().__init__(None, flags)
+        else:
+            super().__init__(None)
         # self.setWindowFlags(QtCore.Qt.WindowFlags(QtCore.Qt.CustomizeWindowHint,QtCore.Qt.WindowStaysOnTopHint))
         # super().__init__(None,  QtCore.Qt.WindowStaysOnTopHint)
 
