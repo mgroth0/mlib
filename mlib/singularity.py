@@ -69,7 +69,9 @@ class SingularityRecipe(File):
         p.log_to_stdout()
         p.sendatprompt(build_command)
         p.prompt()
+        log("About to do weird prompt")
         p.prompt()  # NO IDEA WHY WE NEED TO EXPECT PROMPT TWICE HERE BUT WE DO OR ELSE PROCESS IS CLOSED EARLY
+        log("finished weird prompt")
         p.close()
 
         if isinstance(vp, Host):
