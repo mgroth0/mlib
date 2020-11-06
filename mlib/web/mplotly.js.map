@@ -1,7 +1,7 @@
 {
   "version": 3,
   "file": "mplotly.js",
-  "sourceRoot": "../../../hep",
+  "sourceRoot": "../../../dnn",
   "sources": [
     "../mlib/mlib/web/mplotly.coffee"
   ],

@@ -422,6 +422,11 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         shutil.move(self.abspath, File(new).abspath)
         return File(new)
 
+    def rename(self, new):
+        new = self.parent[new]
+        shutil.move(self.abspath, new.abspath)
+        return new
+
 
 
     @property

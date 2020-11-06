@@ -249,6 +249,7 @@ RIGHT_ARROW = Key(39, "Right Arrow Key")
 LEFT_ARROW = Key(37, "Left Arrow Key")
 UP_ARROW = Key(38, "Right Arrow Key")
 DOWN_ARROW = Key(40, "Left Arrow Key")
+S_KEY = Key(83, "S Key")
 C_KEY = Key(67, "C Key")
 N_KEY = Key(78, "N Key")
 #noinspection JSUnusedGlobalSymbols
