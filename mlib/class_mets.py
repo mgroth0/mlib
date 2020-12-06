@@ -17,6 +17,19 @@ def binary_results(y_true, y_pred):
     TN = count_nonzero(bitwise_and(y_pred == neg, y_true == neg))
     FN = count_nonzero(bitwise_and(y_pred == neg, y_true == pos))
     return TP, FP, TN, FN, P, N
+
+def multi_results(y_true, y_pred):
+    y_true = arr(y_true)
+    y_pred = arr(y_pred)
+    C = 0
+    I = 0
+    for i in range(len(y_true)):
+        if y_true[i] == y_pred[i]:
+            C += 1
+        else:
+            I += 1
+    return C, I
+
 def mcc_basic(TP, FP, TN, FN):
     denom = sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
     if denom == 0: denom = 1

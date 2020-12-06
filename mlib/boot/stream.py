@@ -146,7 +146,11 @@ class mparray(np.ndarray):
 
     def max_by(self, lamp): return max_by(self, lamp)
     def filtered(self, *tests): return arr(filtered(self, *tests))
-    def first(self, *tests): return filtered(self, *tests)[0]
+    def first(self, *tests):
+        the_first = filtered(self, *tests)
+        if len(the_first) == 0:
+            raise Exception('first() failed because no elements passed the test')
+        return the_first[0]
     def map(self, fun):
         import mlib.boot.mlog
         r = listmap(fun, self)
