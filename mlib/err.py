@@ -40,6 +40,7 @@ def register_exception_and_warning_handlers():
         for e in exceptions:
             if e[0] != Short_MException:
                 sys.__excepthook__(*e)
+
     @atexit.register
     def print_warnings_again():
         from mlib.boot.mlog import warnings, log
