@@ -43,15 +43,17 @@ def register_exception_and_warning_handlers():
 
     @atexit.register
     def print_warnings_again():
-        from mlib.boot.mlog import warnings, log
-        import mlib.boot.mlog
-        if not mlib.boot.mlog.QUIET: log(f'{len(warnings)=}')
-        if len(warnings) > 0:
-            log('WARNINGS:')
-        for w in warnings:
-            log(f'\t{w}')
+        pub_print_warn()
 
 
+def pub_print_warn():
+    from mlib.boot.mlog import warnings, log
+    import mlib.boot.mlog
+    if not mlib.boot.mlog.QUIET: log(f'{len(warnings)=}')
+    if len(warnings) > 0:
+        log('WARNINGS:')
+    for w in warnings:
+        log(f'\t{w}')
 
 
 class MException(Exception): pass
