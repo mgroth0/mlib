@@ -2,6 +2,7 @@ import atexit
 import sys
 
 from mlib.boot.lang import ismac, pwd, enum
+from mlib.boot.stream import listitems
 
 exceptions = []
 def register_exception_and_warning_handlers():
@@ -59,7 +60,7 @@ def pub_print_warn():
                 warning_map[w] += 1
             else:
                 warning_map[w] = 1
-        for k, v in warning_map:
+        for k, v in listitems(warning_map):
             log(f'\t{k} ({v} occurrences)')
     else:
         log('NO WARNINGS!')
