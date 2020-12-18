@@ -52,8 +52,17 @@ def pub_print_warn():
     if not mlib.boot.mlog.QUIET: log(f'{len(warnings)=}')
     if len(warnings) > 0:
         log('WARNINGS:')
-    for w in warnings:
-        log(f'\t{w}')
+
+        warning_map = {}
+        for w in warnings:
+            if w in warning_map:
+                warning_map[w] += 1
+            else:
+                warning_map[w] = 1
+        for k, v in warning_map:
+            log(f'\t{k} ({v} occurrences)')
+    else:
+        log('NO WARNINGS!')
 
 
 class MException(Exception): pass
