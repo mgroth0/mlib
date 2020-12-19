@@ -252,7 +252,6 @@ class Project(SuperRunner, ABC):
             if isinstance(cfg[k], bool):
                 v = bool(int(v))
             cfg[k] = v
-        breakpoint()
         return obj(cfg)
 
     def fun_registry(self):
