@@ -376,6 +376,9 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         assert self.isdir
         [f.delete() for f in self.files]
 
+    def clearIfExists(self):
+        if self.exists: self.clear()
+
 
     def deleteIfExists(self):
         # try:
