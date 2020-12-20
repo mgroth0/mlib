@@ -1,3 +1,6 @@
+from mlib.boot import log, mlog
+log('earliest log struct.py')
+
 from abc import abstractmethod, ABC
 import os
 import sys
@@ -7,8 +10,7 @@ from git import Repo
 
 from mlib.JsonSerializable import obj
 from mlib.analyses import ANALYSES, AnalysisMode, clear_cell_cache
-from mlib.boot import log, mlog
-log('earliest log struct.py')
+
 from mlib.boot.dicts import SubDictProxy, PermaDict
 from mlib.boot.lang import listkeys, isstr, ismac, pwd, cn, HOME, islinux
 from mlib.boot.mlog import toc_str, err, logy, logc
