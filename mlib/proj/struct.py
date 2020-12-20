@@ -14,6 +14,7 @@ from mlib.boot.mlog import toc_str, err, logy, logc
 from mlib.boot.stream import arr, enum, listitems
 from mlib.file import File, Folder, pwdf, getNextIncrementalFile
 from mlib.inspect import mn
+log('middle of some imports in struct.py')
 from mlib.km import reloadIdeaFilesFromDisk
 from mlib.obj import SuperRunner
 from mlib.parallel import run_in_daemon
