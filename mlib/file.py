@@ -433,6 +433,7 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
         for i in fol:
             p1 = os.path.join(path, i)
             p3 = 'cp -r ' + p1 + ' ' + p2 + '/.'
+            breakpoint()
             subprocess.Popen(p3, shell=True).communicate()
 
     def moveto(self, new):
