@@ -434,7 +434,6 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
             p1 = os.path.join(path, i)
             p3 = 'cp -r ' + p1 + ' ' + p2 + '/.'
             subprocess.Popen(p3, shell=True).communicate()
-        shutil.move(self.abspath, File(new).abspath)
 
     def moveto(self, new):
         assert not File(new).isdir
