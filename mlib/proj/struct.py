@@ -26,6 +26,8 @@ from mlib.term import log_invokation
 from mlib.wolf import wolf_manager
 from mlib.wolf.wolfpy import WOLFRAM
 
+log('top of struct.py import')
+
 def main_mod_file():
     if hasattr(sys.modules['__main__'], '__file__'):
         return File(os.path.abspath(sys.modules['__main__'].__file__))
