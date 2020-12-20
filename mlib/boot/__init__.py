@@ -18,3 +18,5 @@ from mlib.boot.mlog import log
 
 
 __all__ = [log]
+
+log('finished booting')
