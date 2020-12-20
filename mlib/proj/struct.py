@@ -59,7 +59,7 @@ REMOTE_CWD = None
 if islinux():
     REMOTE_CWD = pwd()
 
-
+log('Defining Project')
 
 class Project(SuperRunner, ABC):
     INPUT_FILE = File('_input.txt')
