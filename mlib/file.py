@@ -8,6 +8,7 @@ import pathlib
 from pathlib import Path
 import pickle
 import shutil
+import subprocess
 from typing import MutableMapping
 
 import matplotlib.image as mpimg
@@ -418,6 +419,21 @@ class File(os.PathLike, MutableMapping, Muffleable, SimpleObject):
     def moveinto(self, new):
         File(new).mkdirs()
         assert File(new).isdir
+        shutil.move(self.abspath, File(new).abspath)
+
+    def mergeinto(self, new):
+        File(new).mkdirs()
+        assert File(new).isdir
+        # path=raw_input('Please enter a path\n')
+        path = self.abspath
+        fol = os.listdir(path)
+        # p2 = raw_input('Please enter a path\n')
+        p2 = File(new).abspath
+
+        for i in fol:
+            p1 = os.path.join(path, i)
+            p3 = 'cp -r ' + p1 + ' ' + p2 + '/.'
+            subprocess.Popen(p3, shell=True).communicate()
         shutil.move(self.abspath, File(new).abspath)
 
     def moveto(self, new):
